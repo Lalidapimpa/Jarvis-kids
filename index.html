@@ -340,7 +340,7 @@ var T = {
     talk:'พูดกับ Jarvis', stop:'หยุด',
     tapwake:'แตะเพื่อเปิดไมค์',
     talktap:'แตะแล้วพูด 🎤', listening:'กำลังฟัง… 👂',
-    sayhey:'เปิดไมค์แล้ว! ลองพูดว่า "Hey Jarvis" ได้เลย',
+    sayhey:'เปิดไมค์แล้ว! พูดได้เลย เช่น "ฉลาม" หรือ "ช้าง"',
     sayheybtn:'พูด "Hey Jarvis"',
     hi:'สวัสดีจ้า!',
     bye:'บ๊ายบาย แล้วเจอกันนะ!',
@@ -364,7 +364,7 @@ var T = {
     talk:'Talk to Jarvis', stop:'Stop',
     tapwake:'Tap to turn on',
     talktap:'Tap to talk 🎤', listening:'Listening… 👂',
-    sayhey:'Mic is on! Try saying "Hey Jarvis"',
+    sayhey:'Mic is on! Just talk — try "shark" or "elephant"',
     sayheybtn:'Say "Hey Jarvis"',
     hi:'Hi there!',
     bye:'Bye bye! See you soon!',
@@ -891,18 +891,25 @@ function speak(text){
       var nice = want.find(function(v){return /kanya|google|samantha|nicky|aaron/i.test(v.name);});
       u.voice = nice||want[0];
     }
+    jarvisSpeaking = true;                 // set now, don't wait for onstart (it can be flaky)
+    if(speakWatchdog) clearTimeout(speakWatchdog);
+    var est = Math.min(15000, 2500 + text.length * 90);
+    speakWatchdog = setTimeout(function(){   // safety: never let the mic stay "deaf" if onend doesn't fire
+      jarvisSpeaking=false; muteUntil=Date.now()+300; setState(null); busy=false;
+    }, est);
     u.onstart=function(){ jarvisSpeaking=true; setState('talking'); };
-    u.onend=function(){ jarvisSpeaking=false; muteUntil=Date.now()+1200; setState(null); busy=false; };
-    u.onerror=function(){ jarvisSpeaking=false; muteUntil=Date.now()+1200; setState(null); busy=false; };
+    u.onend=function(){ if(speakWatchdog) clearTimeout(speakWatchdog); jarvisSpeaking=false; muteUntil=Date.now()+1000; setState(null); busy=false; };
+    u.onerror=function(){ if(speakWatchdog) clearTimeout(speakWatchdog); jarvisSpeaking=false; muteUntil=Date.now()+1000; setState(null); busy=false; };
     curUtter=u;
     window.speechSynthesis.speak(u);
-  }catch(e){ setState(null); busy=false; }
+  }catch(e){ jarvisSpeaking=false; setState(null); busy=false; }
 }
 
 // Stop whatever Jarvis is SAYING right now (used when a child taps something new).
 function stopJarvis(){
   reqId++;  // any answer still loading from before is now ignored
   jarvisSpeaking=false;
+  if(speakWatchdog){ clearTimeout(speakWatchdog); speakWatchdog=null; }
   if(curUtter){ curUtter.onstart=null; curUtter.onend=null; curUtter.onerror=null; curUtter=null; }
   if('speechSynthesis' in window) window.speechSynthesis.cancel();
   busy=false; setState(null);
@@ -922,9 +929,12 @@ function sayFiller(text){
     var voices=window.speechSynthesis.getVoices();
     var want=voices.filter(function(v){return v.lang && v.lang.toLowerCase().indexOf(lang==='th'?'th':'en')===0;});
     if(want.length){var nice=want.find(function(v){return /kanya|google|samantha|nicky|aaron/i.test(v.name);});u.voice=nice||want[0];}
+    jarvisSpeaking=true;
+    if(speakWatchdog) clearTimeout(speakWatchdog);
+    speakWatchdog=setTimeout(function(){ jarvisSpeaking=false; muteUntil=Date.now()+200; }, 3500);
     u.onstart=function(){ jarvisSpeaking=true; };
-    u.onend=function(){ jarvisSpeaking=false; muteUntil=Date.now()+900; };
-    u.onerror=function(){ jarvisSpeaking=false; muteUntil=Date.now()+900; };
+    u.onend=function(){ if(speakWatchdog) clearTimeout(speakWatchdog); jarvisSpeaking=false; muteUntil=Date.now()+700; };
+    u.onerror=function(){ if(speakWatchdog) clearTimeout(speakWatchdog); jarvisSpeaking=false; muteUntil=Date.now()+700; };
     window.speechSynthesis.speak(u);
   }catch(e){}
 }
@@ -1030,6 +1040,7 @@ var micOn = false;         // has the parent turned the always-listening mode ON
 var awake = false;         // is Jarvis currently "awake" and answering?
 var jarvisSpeaking = false; // true while Jarvis is talking — mic must NOT listen to his own voice
 var muteUntil = 0;          // ignore anything heard until this time (covers the echo tail)
+var speakWatchdog = null;   // safety timer so jarvisSpeaking never gets stuck on
 // Only iPad/iPhone truly can't do continuous "Hey Jarvis" listening (Apple blocks it) -> tap-to-talk there.
 // Every other device (computer, Mac) keeps the always-on hands-free mode.
 var USE_TAPTALK = (function(){
@@ -1145,6 +1156,7 @@ function turnMicOn(){
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if(!SR){ flashHint(T[lang].nomic); return; }
   micOn = true;
+  awake = true;          // turning the mic on means "I'm ready to talk" — no need to say "Hey Jarvis" first
   setMicVisual();
   flashHint(T[lang].sayhey);
   startRecog();
