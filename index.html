@@ -4,6 +4,9 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <title>Jarvis Jr.</title>
+<link rel="apple-touch-icon" href="apple-touch-icon.png" />
+<link rel="icon" type="image/png" href="apple-touch-icon.png" />
+<meta name="apple-mobile-web-app-title" content="Jarvis Jr." />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
@@ -1027,14 +1030,13 @@ var micOn = false;         // has the parent turned the always-listening mode ON
 var awake = false;         // is Jarvis currently "awake" and answering?
 var jarvisSpeaking = false; // true while Jarvis is talking — mic must NOT listen to his own voice
 var muteUntil = 0;          // ignore anything heard until this time (covers the echo tail)
-// iPad/iPhone/Safari can't do reliable continuous "Hey Jarvis" listening,
-// so we use tap-to-talk there. Desktop Chrome/Edge keep the hands-free mode.
+// Only iPad/iPhone truly can't do continuous "Hey Jarvis" listening (Apple blocks it) -> tap-to-talk there.
+// Every other device (computer, Mac) keeps the always-on hands-free mode.
 var USE_TAPTALK = (function(){
   var ua = navigator.userAgent || '';
   var iDevice = /iPad|iPhone|iPod/.test(ua);
   var iPadOS = (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  var isSafari = /^((?!chrome|android|crios|fxios|edg|opr).)*safari/i.test(ua);
-  return iDevice || iPadOS || isSafari;
+  return iDevice || iPadOS;
 })();
 var restartTimer = null;
 
