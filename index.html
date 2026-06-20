@@ -1,0 +1,1363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Jarvis Jr.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --abyss:#071333;
+    --deep:#0d2356;
+    --teal:#00d9e8;
+    --lagoon:#37e6a0;
+    --coral:#ff7a45;
+    --sun:#ffd23f;
+    --foam:#eafcff;
+    --shark:#5fc8ff;
+    --dino:#7be08a;
+    --fish:#ffb05c;
+    --monster:#c08bff;
+    --whale:#6ea8ff;
+    --turtle:#5fd6a8;
+    --crab:#ff8f7a;
+    --seahorse:#ffcf5c;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    font-family:'Nunito',system-ui,sans-serif;
+    background:
+      radial-gradient(120% 90% at 50% -10%, #14367a 0%, var(--deep) 38%, var(--abyss) 100%);
+    color:var(--foam);
+    overflow:hidden;
+    height:100dvh;
+    position:relative;
+    user-select:none;
+  }
+
+  /* ambient ocean */
+  .ambient{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;}
+  .ray{position:absolute;top:-20%;width:18vw;height:140%;
+    background:linear-gradient(180deg, rgba(120,220,255,.14), transparent 70%);
+    filter:blur(8px);transform:rotate(8deg);animation:sway 11s ease-in-out infinite;}
+  .ray.r2{left:30%;animation-delay:-3s;opacity:.7;}
+  .ray.r3{left:62%;animation-delay:-6s;opacity:.6;}
+  .ray.r1{left:6%;}
+  @keyframes sway{0%,100%{transform:rotate(8deg) translateX(0);}50%{transform:rotate(8deg) translateX(30px);}}
+
+  .bubble{position:absolute;bottom:-40px;border-radius:50%;
+    background:radial-gradient(circle at 30% 30%, rgba(255,255,255,.85), rgba(120,220,255,.25) 60%, transparent);
+    animation:rise linear infinite;}
+  @keyframes rise{
+    0%{transform:translateY(0) translateX(0);opacity:0;}
+    10%{opacity:.8;}
+    90%{opacity:.6;}
+    100%{transform:translateY(-115dvh) translateX(20px);opacity:0;}
+  }
+  .swimmer{position:absolute;font-size:30px;opacity:.18;animation:swim linear infinite;will-change:transform;}
+  @keyframes swim{from{transform:translateX(-15vw) scaleX(1);}to{transform:translateX(115vw) scaleX(1);}}
+
+  /* layout */
+  .app{position:relative;z-index:2;height:100dvh;display:flex;flex-direction:column;
+    max-width:760px;margin:0 auto;padding:10px 16px 18px;}
+
+  .topbar{display:flex;align-items:center;justify-content:space-between;flex:0 0 auto;}
+  .play{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;
+    justify-content:center;gap:14px;}
+  .brand{font-family:'Fredoka';font-weight:700;font-size:20px;letter-spacing:.5px;
+    color:var(--foam);display:flex;align-items:center;gap:8px;}
+  .brand .dot{width:11px;height:11px;border-radius:50%;background:var(--lagoon);
+    box-shadow:0 0 12px var(--lagoon);animation:blink 2.4s ease-in-out infinite;}
+  @keyframes blink{0%,100%{opacity:1;}50%{opacity:.35;}}
+
+  .lang{display:flex;background:rgba(255,255,255,.08);border-radius:999px;padding:4px;
+    border:1px solid rgba(255,255,255,.12);}
+  .lang button{font-family:'Fredoka';font-weight:600;font-size:14px;color:var(--foam);
+    background:transparent;border:none;border-radius:999px;padding:7px 16px;cursor:pointer;opacity:.6;}
+  .lang button.on{background:var(--teal);color:#062033;opacity:1;}
+
+  /* avatar */
+  .stage{flex:0 0 auto;display:flex;justify-content:center;align-items:center;
+    padding:14px 0 10px;position:relative;}
+  .rings{position:absolute;width:210px;height:210px;border-radius:50%;
+    border:3px solid var(--teal);opacity:0;}
+  .listening .rings{animation:pulse 1.4s ease-out infinite;}
+  .listening .rings.d{animation-delay:.5s;}
+  @keyframes pulse{0%{transform:scale(.6);opacity:.7;}100%{transform:scale(1.25);opacity:0;}}
+
+  .jarvis{width:172px;height:172px;cursor:pointer;animation:bob 3.4s ease-in-out infinite;
+    filter:drop-shadow(0 14px 26px rgba(0,160,200,.35));}
+  @keyframes bob{0%,100%{transform:translateY(0) rotate(-1.5deg);}50%{transform:translateY(-12px) rotate(1.5deg);}}
+  .thinking .jarvis{animation:bob 3.4s ease-in-out infinite, wob .8s ease-in-out infinite;}
+  @keyframes wob{0%,100%{transform:rotate(-4deg);}50%{transform:rotate(4deg);}}
+
+  .talking .mouth{animation:talk .26s ease-in-out infinite alternate;transform-origin:center;}
+  @keyframes talk{from{transform:scaleY(.4);}to{transform:scaleY(1.15);}}
+
+  /* moving creature parts */
+  .anim{transform-box:fill-box;}
+  .wagL{transform-box:fill-box;transform-origin:left center;animation:wag 1.1s ease-in-out infinite;}
+  .wagFast{transform-box:fill-box;transform-origin:left center;animation:wag .7s ease-in-out infinite;}
+  .wig{transform-box:fill-box;transform-origin:center bottom;animation:wig 1.6s ease-in-out infinite;}
+  .neck{transform-box:fill-box;transform-origin:bottom right;animation:nod 2.6s ease-in-out infinite;}
+  .tent{transform-box:fill-box;transform-origin:center top;animation:wiggle 1.4s ease-in-out infinite;}
+  @keyframes wag{0%,100%{transform:rotate(-9deg);}50%{transform:rotate(11deg);}}
+  @keyframes wig{0%,100%{transform:rotate(-7deg);}50%{transform:rotate(7deg);}}
+  @keyframes nod{0%,100%{transform:rotate(-4deg);}50%{transform:rotate(4deg);}}
+  @keyframes wiggle{0%,100%{transform:translateY(0) rotate(-4deg);}50%{transform:translateY(3px) rotate(4deg);}}
+
+  /* speech bubble */
+  .speech{margin:6px 4px 12px;background:rgba(255,255,255,.96);color:#0c2747;
+    border-radius:26px;padding:20px 22px;min-height:96px;position:relative;
+    box-shadow:0 12px 34px rgba(2,16,40,.45);display:flex;align-items:center;justify-content:center;}
+  .speech::before{content:"";position:absolute;top:-14px;left:50%;transform:translateX(-50%);
+    border-left:14px solid transparent;border-right:14px solid transparent;border-bottom:16px solid rgba(255,255,255,.96);}
+  .speech p{font-family:'Nunito';font-weight:800;font-size:20px;line-height:1.45;text-align:center;}
+  .speech.idle p{color:#5b7da6;font-weight:700;}
+  .dots span{display:inline-block;width:12px;height:12px;margin:0 4px;border-radius:50%;
+    background:var(--teal);animation:jump .9s ease-in-out infinite;}
+  .dots span:nth-child(2){animation-delay:.15s;background:var(--coral);}
+  .dots span:nth-child(3){animation-delay:.3s;background:var(--lagoon);}
+  @keyframes jump{0%,100%{transform:translateY(0);}50%{transform:translateY(-10px);}}
+  .bounce{display:inline-block;font-size:46px;line-height:1;animation:jump .6s ease-in-out infinite;}
+
+  /* creature buttons */
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+  .crt{font-family:'Fredoka';font-weight:600;border:none;border-radius:20px;
+    padding:12px 6px 10px;cursor:pointer;color:#06243a;display:flex;flex-direction:column;
+    align-items:center;gap:4px;font-size:14px;line-height:1.12;text-align:center;
+    overflow-wrap:anywhere;transition:transform .12s ease;
+    box-shadow:0 6px 0 rgba(0,0,0,.22);}
+  .crt:active{transform:translateY(5px);box-shadow:0 2px 0 rgba(0,0,0,.22);}
+  .crt .ico{font-size:30px;line-height:1;}
+  .crt.shark{background:var(--shark);}
+  .crt.dino{background:var(--dino);}
+  .crt.fish{background:var(--fish);}
+  .crt.monster{background:var(--monster);}
+  .crt.whale{background:var(--whale);}
+  .crt.turtle{background:var(--turtle);}
+  .crt.crab{background:var(--crab);}
+  .crt.seahorse{background:var(--seahorse);}
+
+  /* category buttons (home screen) */
+  .grid.cats{grid-template-columns:repeat(2,1fr);gap:12px;}
+  .cat{font-family:'Fredoka';font-weight:600;border:none;border-radius:22px;
+    padding:18px 10px;cursor:pointer;color:#06243a;display:flex;flex-direction:column;
+    align-items:center;gap:6px;font-size:15px;line-height:1.15;text-align:center;
+    overflow-wrap:anywhere;transition:transform .12s ease;box-shadow:0 6px 0 rgba(0,0,0,.22);}
+  .cat:active{transform:translateY(5px);box-shadow:0 2px 0 rgba(0,0,0,.22);}
+  .cat .ico{font-size:34px;line-height:1;}
+  /* category nav bar (shown only inside a category) */
+  .navbar{display:none;align-items:center;gap:10px;margin-bottom:2px;}
+  .navbar.on{display:flex;}
+  .catback{font-family:'Fredoka';font-weight:700;font-size:15px;color:#062033;
+    background:linear-gradient(180deg,var(--sun),var(--coral));border:none;border-radius:16px;
+    padding:9px 15px;cursor:pointer;box-shadow:0 4px 0 #c8531f;display:flex;align-items:center;gap:5px;}
+  .catback:active{transform:translateY(3px);box-shadow:0 1px 0 #c8531f;}
+  .catback .arrow{font-size:19px;line-height:1;}
+  .cattitle{font-family:'Fredoka';font-weight:700;font-size:18px;color:var(--foam);}
+
+  .micbtn{width:100%;font-family:'Fredoka';font-weight:700;font-size:21px;color:#062033;
+    background:linear-gradient(180deg,var(--sun),var(--coral));border:none;border-radius:24px;
+    padding:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:12px;
+    box-shadow:0 7px 0 #c8531f;transition:transform .12s ease;}
+  .micbtn:active{transform:translateY(5px);box-shadow:0 2px 0 #c8531f;}
+  /* RED = mic off (offline) */
+  .micbtn.off{background:linear-gradient(180deg,#ff6b6b,#e23b3b);box-shadow:0 7px 0 #a81f1f;color:#fff;}
+  /* GREEN = mic on (online / listening) */
+  .micbtn.ready{background:linear-gradient(180deg,#54e6a0,#1fbf72);box-shadow:0 7px 0 #128a50;color:#06301f;}
+  .micbtn.ready.live{animation:micpulse 1.1s ease-in-out infinite;}
+  .micbtn .micico{font-size:24px;}
+  @keyframes micpulse{0%,100%{transform:scale(1);}50%{transform:scale(1.04);}}
+  .replies{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;
+    opacity:.35;pointer-events:none;transition:opacity .25s ease;}
+  .replies.on{opacity:1;pointer-events:auto;}
+  .rep{font-family:'Fredoka';font-weight:700;font-size:17px;border:none;border-radius:20px;
+    padding:14px 6px 11px;cursor:pointer;color:#062033;display:flex;flex-direction:column;
+    align-items:center;gap:3px;line-height:1.1;text-align:center;overflow-wrap:anywhere;
+    transition:transform .12s ease;box-shadow:0 6px 0 rgba(0,0,0,.2);}
+  .rep:active{transform:translateY(5px);box-shadow:0 1px 0 rgba(0,0,0,.2);}
+  .rep .rico{font-size:26px;line-height:1;}
+  .rep.yes{background:var(--lagoon);}
+  .rep.more{background:var(--teal);}
+  .rep.why{background:var(--sun);}
+  .rep.wow{background:#ff9ec4;}
+  .rep.next{background:#9ec7ff;}   /* soft blue  */
+  .rep.no{background:#ffb38f;}     /* gentle peach */
+
+  .hint{text-align:center;font-size:12.5px;color:rgba(234,252,255,.55);margin-top:9px;min-height:16px;}
+
+  @media (max-height:680px){
+    .jarvis{width:130px;height:130px;} .rings{width:160px;height:160px;}
+    .speech{min-height:76px;padding:15px;} .speech p{font-size:18px;}
+    .crt .ico{font-size:28px;} .crt{font-size:13px;}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{animation-duration:.001s !important;}
+    .jarvis{animation:none;} .swimmer,.bubble,.ray{display:none;}
+  }
+  /* ---- big immersive creature view (Level A: enlarge + animate cartoon) ---- */
+  .bigstage{position:fixed;inset:0;z-index:50;display:none;flex-direction:column;
+    background:radial-gradient(120% 90% at 50% 0%, #14367a 0%, var(--deep) 42%, var(--abyss) 100%);
+    padding:14px 16px max(16px,env(safe-area-inset-bottom)) 16px;}
+  .bigstage.show{display:flex;}
+  .bigtop{display:flex;align-items:center;gap:12px;flex:0 0 auto;flex-wrap:wrap;}
+  .micmini{margin-left:auto;font-family:'Fredoka';font-weight:700;font-size:16px;
+    border:none;border-radius:18px;padding:11px 18px;cursor:pointer;white-space:nowrap;
+    display:flex;align-items:center;gap:8px;transition:transform .12s ease;}
+  .micmini:active{transform:translateY(4px) !important;}
+  .micmini .micico{font-size:20px;}
+  .micmini.off{background:linear-gradient(180deg,#ff6b6b,#e23b3b);box-shadow:0 5px 0 #a81f1f;color:#fff;}
+  .micmini.ready{background:linear-gradient(180deg,#54e6a0,#1fbf72);box-shadow:0 5px 0 #128a50;color:#06301f;}
+  .micmini.ready.live{animation:micpulse 1.1s ease-in-out infinite;}
+  .backbtn{font-family:'Fredoka';font-weight:700;font-size:17px;color:#062033;
+    background:linear-gradient(180deg,var(--sun),var(--coral));border:none;border-radius:18px;
+    padding:11px 18px;cursor:pointer;box-shadow:0 5px 0 #c8531f;display:flex;align-items:center;gap:6px;}
+  .backbtn:active{transform:translateY(4px);box-shadow:0 1px 0 #c8531f;}
+  .backbtn .arrow{font-size:22px;line-height:1;}
+  .bigname{font-family:'Fredoka';font-weight:700;font-size:22px;color:var(--foam);}
+  .bigwrap{flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+  .jarvisBig{width:min(62vmin,360px);height:min(62vmin,360px);cursor:pointer;
+    animation:bobBig 3.4s ease-in-out infinite;
+    filter:drop-shadow(0 22px 42px rgba(0,160,200,.45));}
+  @keyframes bobBig{
+    0%{transform:translate(-20px,0) rotate(-2.5deg);}
+    50%{transform:translate(20px,-22px) rotate(2.5deg);}
+    100%{transform:translate(-20px,0) rotate(-2.5deg);}}
+  .thinking .jarvisBig{animation:bobBig 3.4s ease-in-out infinite, wob .8s ease-in-out infinite;}
+  .bigspeech{flex:0 0 auto;background:rgba(255,255,255,.96);color:#0c2747;border-radius:26px;
+    padding:18px 20px;min-height:84px;display:flex;align-items:center;justify-content:center;
+    box-shadow:0 12px 34px rgba(2,16,40,.45);margin:6px 2px 12px;}
+  .bigspeech p{font-family:'Nunito';font-weight:800;font-size:21px;line-height:1.4;text-align:center;}
+  .bigspeech.idle p{color:#5b7da6;font-weight:700;}
+  @media (max-height:680px){
+    .jarvisBig{width:min(44vmin,230px);height:min(44vmin,230px);}
+    .bigspeech{min-height:62px;padding:13px;} .bigspeech p{font-size:18px;}
+  }
+  /* parent-facing diagnostic bar (only shows when a request fails) */
+  .diag{position:fixed;left:8px;right:8px;bottom:6px;z-index:60;display:none;
+    background:rgba(8,16,36,.94);color:#ffd2d2;font-family:'Nunito',sans-serif;font-size:12px;
+    line-height:1.35;padding:9px 13px;border-radius:12px;border:1px solid rgba(255,120,120,.55);
+    box-shadow:0 6px 20px rgba(0,0,0,.4);cursor:pointer;}
+</style>
+</head>
+<body>
+<div class="ambient" id="ambient">
+  <div class="ray r1"></div><div class="ray r2"></div><div class="ray r3"></div>
+</div>
+
+<div class="app" id="app">
+  <div class="topbar">
+    <div class="brand"><span class="dot"></span> Jarvis Jr.</div>
+    <div class="lang">
+      <button id="thBtn" onclick="setLang('th')">ไทย</button>
+      <button id="enBtn" class="on" onclick="setLang('en')">EN</button>
+    </div>
+  </div>
+
+  <div class="play">
+    <div class="stage" id="stage">
+      <div class="rings"></div>
+      <div class="rings d"></div>
+      <div id="avatarSlot"></div>
+    </div>
+
+    <div class="speech idle" id="speech">
+      <p id="answer"></p>
+    </div>
+
+    <div class="navbar" id="navbar">
+      <button class="catback" onclick="showHome()"><span class="arrow">‹</span><span id="catBackLbl"></span></button>
+      <span class="cattitle" id="catTitle"></span>
+    </div>
+
+    <div class="grid cats" id="grid"></div>
+
+    <button class="micbtn" id="micBtn" onclick="micTap()">
+      <span class="micico">🎤</span><span id="micLbl">Talk to Jarvis</span>
+    </button>
+
+    <div class="replies" id="replies">
+      <button class="rep yes"  onclick="reply('yes')"><span class="rico">🎉</span><span data-rep="yes">Yes!</span></button>
+      <button class="rep more" onclick="reply('more')"><span class="rico">🔊</span><span data-rep="more">More!</span></button>
+      <button class="rep next" onclick="reply('next')"><span class="rico">⏭️</span><span data-rep="next">Next</span></button>
+      <button class="rep why"  onclick="reply('why')"><span class="rico">🤔</span><span data-rep="why">Why?</span></button>
+      <button class="rep wow"  onclick="reply('wow')"><span class="rico">😍</span><span data-rep="wow">Wow!</span></button>
+      <button class="rep no"   onclick="reply('no')"><span class="rico">🙅</span><span data-rep="no">No</span></button>
+    </div>
+    <div class="hint" id="hint"></div>
+  </div>
+</div>
+
+<!-- BIG immersive creature view (Level A) -->
+<div class="bigstage" id="bigStage">
+  <div class="bigtop">
+    <button class="backbtn" onclick="closeBig()"><span class="arrow">‹</span><span data-rep="back">Back</span></button>
+    <div class="bigname" id="bigName"></div>
+    <button class="micmini off" id="bigMic" onclick="micTap()">
+      <span class="micico">🎤</span><span id="bigMicLbl"></span>
+    </button>
+  </div>
+  <div class="bigwrap" id="bigAvatarWrap">
+    <div id="bigAvatarSlot"></div>
+  </div>
+  <div class="bigspeech idle" id="bigSpeech"><p id="bigAnswer"></p></div>
+  <div class="replies" id="bigReplies">
+    <button class="rep yes"  onclick="reply('yes')"><span class="rico">🎉</span><span data-rep="yes">Yes!</span></button>
+    <button class="rep more" onclick="reply('more')"><span class="rico">🔊</span><span data-rep="more">More!</span></button>
+    <button class="rep next" onclick="reply('next')"><span class="rico">⏭️</span><span data-rep="next">Next</span></button>
+    <button class="rep why"  onclick="reply('why')"><span class="rico">🤔</span><span data-rep="why">Why?</span></button>
+    <button class="rep wow"  onclick="reply('wow')"><span class="rico">😍</span><span data-rep="wow">Wow!</span></button>
+    <button class="rep no"   onclick="reply('no')"><span class="rico">🙅</span><span data-rep="no">No</span></button>
+  </div>
+</div>
+
+<script>
+/* ---------------- state + i18n ---------------- */
+var lang = 'en';
+var busy = false;
+var reqId = 0;          // identifies the latest request so stale answers are ignored
+var curUtter = null;    // the utterance Jarvis is currently speaking
+
+var T = {
+  th:{
+    shark:'ฉลาม', dino:'ไดโนเสาร์', fish:'ปลา', monster:'มอนสเตอร์',
+    whale:'วาฬ', turtle:'เต่า', crab:'ปู', seahorse:'แมวน้ำ',
+    yes:'ใช่!', more:'อีก!', why:'ทำไม?', wow:'ว้าว!', no:'ไม่', next:'ต่อไป', back:'กลับ', cats:'หมวดทั้งหมด',
+    idle:'เลือกหมวด แล้วแตะตัวสัตว์ที่อยากรู้ คุยกับ Jarvis ได้เลย!',
+    thinking:'Jarvis กำลังคิด...',
+    chathint:'แตะปุ่มสีๆ เพื่อคุยกับ Jarvis ต่อ!',
+    oops:'อุ๊ปส์! สมองหุ่นยนต์มีฟองอากาศ ลองใหม่อีกครั้งนะ!',
+    langName:'Thai (ภาษาไทย)',
+    rYes:'ใช่! หนูชอบ!', rMore:'เล่าอีก!', rWhy:'ทำไมล่ะ?', rWow:'ว้าว เจ๋งมาก!', rNo:'อืม ไม่ชอบอันนี้', rNext:'ขออันอื่นอีก!',
+    fill:{shark:'ว้าว ฉลาม!', dino:'เย้ ไดโนเสาร์!', fish:'ปลาว่ายน้ำ!', monster:'ปลาหมึกน่ารัก!', whale:'วาฬตัวใหญ่!', turtle:'เต่าน้อย!', crab:'ปูหนีบ!', seahorse:'แมวน้ำน่ารัก!', more:'ได้เลย!'},
+    talk:'พูดกับ Jarvis', stop:'หยุด',
+    tapwake:'แตะเพื่อเปิดไมค์',
+    talktap:'แตะแล้วพูด 🎤', listening:'กำลังฟัง… 👂',
+    sayhey:'เปิดไมค์แล้ว! ลองพูดว่า "Hey Jarvis" ได้เลย',
+    sayheybtn:'พูด "Hey Jarvis"',
+    hi:'สวัสดีจ้า!',
+    bye:'บ๊ายบาย แล้วเจอกันนะ!',
+    awaketext:'สวัสดีจ้า! ถามอะไร Jarvis ก็ได้เลยนะ 🐠',
+    sleeptext:'Jarvis ไปนอนแล้ว 💤 แตะแถบเพื่อปลุกอีกครั้งนะ',
+    listening:'พูดได้เลย Jarvis กำลังฟังอยู่...',
+    nomic:'เบราว์เซอร์นี้ใช้ไมค์ไม่ได้ ลองเปิดด้วย Safari นะ',
+    micdenied:'แตะอนุญาตให้ใช้ไมโครโฟนก่อนนะคะ'
+  },
+  en:{
+    shark:'Sharks', dino:'Dinos', fish:'Fish', monster:'Monsters',
+    whale:'Whales', turtle:'Turtles', crab:'Crabs', seahorse:'Seals',
+    yes:'Yes!', more:'More!', why:'Why?', wow:'Wow!', no:'No', next:'Next', back:'Back', cats:'All animals',
+    idle:'Pick a group, tap an animal, then chat with Jarvis!',
+    thinking:'Jarvis is thinking...',
+    chathint:'Tap a colorful button to keep talking with Jarvis!',
+    oops:'Oops! My robot brain got bubbles. Try again!',
+    langName:'English',
+    rYes:'Yes! I love it!', rMore:'Tell me more!', rWhy:'Why?', rWow:'Wow, so cool!', rNo:'Hmm, not that one.', rNext:'Another one please!',
+    fill:{shark:'Ooo, sharks! Yay!', dino:'Yay, dinosaurs!', fish:'Splash! Fishies!', monster:'Wiggly octopus!', whale:'A big whale!', turtle:'Sweet little turtle!', crab:'Snippy crab!', seahorse:'Cute seal!', more:'Okay!'},
+    talk:'Talk to Jarvis', stop:'Stop',
+    tapwake:'Tap to turn on',
+    talktap:'Tap to talk 🎤', listening:'Listening… 👂',
+    sayhey:'Mic is on! Try saying "Hey Jarvis"',
+    sayheybtn:'Say "Hey Jarvis"',
+    hi:'Hi there!',
+    bye:'Bye bye! See you soon!',
+    awaketext:'Hi there! Ask Jarvis anything you like 🐠',
+    sleeptext:'Jarvis is sleeping 💤 Tap the bar to wake me up!',
+    listening:'Go ahead — Jarvis is listening...',
+    nomic:'This browser can\u2019t use the mic. Try opening in Safari.',
+    micdenied:'Please allow the microphone to talk!'
+  }
+};
+// One registry for every animal: name (th/en), button emoji, AI topic, instant filler sound,
+// and danger:true for "look-don't-touch" safety animals.
+var ANIMALS = {
+  shark:    {th:'ฉลาม', en:'Sharks', emoji:'🦈', topic:'sharks', fillTh:'ว้าว ฉลาม!', fillEn:'Ooo, sharks! Yay!'},
+  dino:     {th:'ไดโนเสาร์', en:'Dinos', emoji:'🦕', topic:'dinosaurs', fillTh:'เย้ ไดโนเสาร์!', fillEn:'Yay, dinosaurs!'},
+  fish:     {th:'ปลา', en:'Fish', emoji:'🐠', topic:'ocean fish and sea animals', fillTh:'ปลาว่ายน้ำ!', fillEn:'Splash! Fishies!'},
+  monster:  {th:'มอนสเตอร์', en:'Monsters', emoji:'🐙', topic:'friendly legendary sea creatures (like a giant squid, a gentle kraken, or the Loch Ness monster) — kept imaginative and never scary', fillTh:'ปลาหมึกน่ารัก!', fillEn:'Wiggly octopus!'},
+  whale:    {th:'วาฬ', en:'Whales', emoji:'🐋', topic:'whales (like the giant blue whale and the singing humpback whale)', fillTh:'วาฬตัวใหญ่!', fillEn:'A big whale!'},
+  turtle:   {th:'เต่า', en:'Turtles', emoji:'🐢', topic:'sea turtles and tortoises', fillTh:'เต่าน้อย!', fillEn:'Sweet little turtle!'},
+  crab:     {th:'ปู', en:'Crabs', emoji:'🦀', topic:'crabs and other funny crawly sea creatures', fillTh:'ปูหนีบ!', fillEn:'Snippy crab!'},
+  seahorse: {th:'แมวน้ำ', en:'Seals', emoji:'🦭', topic:'seals and sea lions', fillTh:'แมวน้ำน่ารัก!', fillEn:'Cute seal!'},
+
+  dog:      {th:'หมา', en:'Dogs', emoji:'🐶', topic:'dogs and puppies', fillTh:'หมาน้อย โฮ่ง!', fillEn:'Woof! A puppy!'},
+  cat:      {th:'แมว', en:'Cats', emoji:'🐱', topic:'cats and kittens', fillTh:'เหมียว แมวน้อย!', fillEn:'Meow! A kitty!'},
+  rabbit:   {th:'กระต่าย', en:'Bunnies', emoji:'🐰', topic:'pet rabbits and bunnies', fillTh:'กระต่ายน้อย!', fillEn:'A hoppy bunny!'},
+  bird:     {th:'นก', en:'Birds', emoji:'🐦', topic:'little pet birds', fillTh:'นกน้อยจิ๊บๆ!', fillEn:'Tweet! A birdie!'},
+  hamster:  {th:'แฮมสเตอร์', en:'Hamsters', emoji:'🐹', topic:'cute pet hamsters', fillTh:'แฮมสเตอร์จ้ำม่ำ!', fillEn:'A chubby hamster!'},
+
+  lion:     {th:'สิงโต', en:'Lions', emoji:'🦁', topic:'lions, the friendly king of the animals', fillTh:'สิงโตคำราม รรร!', fillEn:'Roar! A lion!'},
+  elephant: {th:'ช้าง', en:'Elephants', emoji:'🐘', topic:'elephants, the biggest land animal', fillTh:'ช้างตัวใหญ่ แปร๋น!', fillEn:'A big elephant!'},
+  monkey:   {th:'ลิง', en:'Monkeys', emoji:'🐵', topic:'monkeys', fillTh:'ลิงน้อยซน!', fillEn:'A silly monkey!'},
+
+  snake:    {th:'งู', en:'Snakes', emoji:'🐍', topic:'snakes', danger:true, fillTh:'งูเลื้อยยย!', fillEn:'A slithery snake!'},
+  jellyfish:{th:'แมงกะพรุน', en:'Jellyfish', emoji:'🪼', topic:'jellyfish', danger:true, fillTh:'แมงกะพรุนวุ้นๆ!', fillEn:'A wobbly jellyfish!'},
+  bee:      {th:'ผึ้ง', en:'Bees', emoji:'🐝', topic:'bees', danger:true, fillTh:'ผึ้งบินหึ่งๆ!', fillEn:'Buzz! A bee!'},
+  crocodile:{th:'จระเข้', en:'Crocodiles', emoji:'🐊', topic:'crocodiles', danger:true, fillTh:'จระเข้งับๆ!', fillEn:'A snappy crocodile!'}
+};
+
+// Learning categories shown on the home screen. An animal can appear in more than one.
+var CATEGORIES = [
+  {key:'water',  th:'สัตว์น้ำ', en:'Water Animals', emoji:'🌊', color:'#6ea8ff', animals:['shark','whale','fish','monster','turtle','crab','seahorse']},
+  {key:'land',   th:'สัตว์บก', en:'Land Animals', emoji:'🌳', color:'#ffcf5c', animals:['lion','elephant','monkey','dino','dog','rabbit']},
+  {key:'pets',   th:'สัตว์เลี้ยงน่ารัก', en:'Cute Pets', emoji:'🏠', color:'#7be08a', animals:['dog','cat','rabbit','bird','hamster','fish']},
+  {key:'danger', th:'สัตว์อันตราย', en:'Stay Away!', emoji:'⚠️', color:'#ff8f7a', animals:['snake','jellyfish','bee','crocodile','shark']}
+];
+var BTN_COLORS = ['#5fc8ff','#7be08a','#ffb05c','#c08bff','#6ea8ff','#5fd6a8','#ff8f7a','#ffcf5c'];
+var angles = ['surprising','funny','record-breaking','tiny weird detail','super cool','amazing'];
+
+/* ---------------- avatar characters ---------------- */
+var SVG_OPEN = '<svg class="jarvis" viewBox="0 0 200 200" onclick="tapJarvis()" aria-label="Jarvis">';
+var SVG_OPEN_BIG = '<svg class="jarvisBig" viewBox="0 0 200 200" onclick="tapJarvis()" aria-label="Jarvis">';
+var AVATARS = {
+  robot:
+    '<defs><radialGradient id="body" cx="40%" cy="32%" r="80%">'
+    + '<stop offset="0%" stop-color="#9af0ff"/><stop offset="55%" stop-color="#28c4e6"/>'
+    + '<stop offset="100%" stop-color="#1577c4"/></radialGradient></defs>'
+    + '<path class="wagL" d="M30 92 Q4 74 8 112 Q26 116 38 108 Z" fill="#1577c4"/>'
+    + '<path d="M170 92 Q196 74 192 112 Q174 116 162 108 Z" fill="#1577c4"/>'
+    + '<line x1="100" y1="40" x2="100" y2="20" stroke="#bdeeff" stroke-width="5" stroke-linecap="round"/>'
+    + '<circle cx="100" cy="16" r="8" fill="#ffd23f"/>'
+    + '<rect x="40" y="44" width="120" height="120" rx="40" fill="url(#body)"/>'
+    + '<rect x="40" y="44" width="120" height="120" rx="40" fill="none" stroke="#bdeeff" stroke-width="3" opacity=".5"/>'
+    + '<circle cx="78" cy="98" r="20" fill="#fff"/><circle cx="122" cy="98" r="20" fill="#fff"/>'
+    + '<circle cx="80" cy="100" r="9" fill="#0a2a44"/><circle cx="124" cy="100" r="9" fill="#0a2a44"/>'
+    + '<circle cx="76" cy="96" r="3" fill="#fff"/><circle cx="120" cy="96" r="3" fill="#fff"/>'
+    + '<circle cx="60" cy="124" r="8" fill="#ff8fa8" opacity=".75"/><circle cx="140" cy="124" r="8" fill="#ff8fa8" opacity=".75"/>'
+    + '<rect class="mouth" x="86" y="128" width="28" height="14" rx="7" fill="#0a2a44"/>',
+
+  shark:
+    '<path class="wagL" d="M150 100 Q184 78 188 58 Q191 96 188 122 Q172 112 150 106 Z" fill="#4a90c2"/>'
+    + '<path class="wig" d="M92 50 Q104 20 128 42 L118 64 Z" fill="#4a90c2"/>'
+    + '<path d="M70 152 Q54 178 86 166 Z" fill="#4a90c2"/>'
+    + '<ellipse cx="95" cy="106" rx="68" ry="56" fill="#5fb4e8"/>'
+    + '<ellipse cx="95" cy="126" rx="46" ry="28" fill="#eaf7ff" opacity=".85"/>'
+    + '<circle cx="78" cy="94" r="17" fill="#fff"/><circle cx="116" cy="94" r="17" fill="#fff"/>'
+    + '<circle cx="80" cy="96" r="8" fill="#0a2a44"/><circle cx="118" cy="96" r="8" fill="#0a2a44"/>'
+    + '<circle cx="77" cy="92" r="3" fill="#fff"/><circle cx="115" cy="92" r="3" fill="#fff"/>'
+    + '<circle cx="62" cy="118" r="7" fill="#ff8fa8" opacity=".7"/><circle cx="128" cy="118" r="7" fill="#ff8fa8" opacity=".7"/>'
+    + '<path class="mouth" d="M76 126 Q95 144 114 126 Q95 134 76 126 Z" fill="#0a2a44"/>'
+    + '<path d="M77.8 127.4 L79.8 132.4 L81.8 127.4 Z" fill="#fff"/>'
+    + '<path d="M82.7 128.8 L84.7 133.8 L86.7 128.8 Z" fill="#fff"/>'
+    + '<path d="M88.1 129.7 L90.1 134.7 L92.1 129.7 Z" fill="#fff"/>'
+    + '<path d="M93 130 L95 135 L97 130 Z" fill="#fff"/>'
+    + '<path d="M97.9 129.7 L99.9 134.7 L101.9 129.7 Z" fill="#fff"/>'
+    + '<path d="M103.3 128.8 L105.3 133.8 L107.3 128.8 Z" fill="#fff"/>'
+    + '<path d="M108.2 127.4 L110.2 132.4 L112.2 127.4 Z" fill="#fff"/>',
+
+  dino:
+    '<path class="wagL" d="M150 142 Q186 150 190 128 Q182 152 150 154 Z" fill="#4faa5e"/>'
+    + '<ellipse cx="112" cy="136" rx="54" ry="38" fill="#7bd88a"/>'
+    + '<rect x="84" y="160" width="16" height="22" rx="7" fill="#4faa5e"/>'
+    + '<rect x="124" y="160" width="16" height="22" rx="7" fill="#4faa5e"/>'
+    + '<path d="M92 104 l6 -13 6 13 Z" fill="#3f9c54"/><path d="M114 100 l6 -13 6 13 Z" fill="#3f9c54"/>'
+    + '<g class="neck">'
+    + '<path d="M72 142 Q40 112 56 70 L80 78 Q70 112 94 134 Z" fill="#7bd88a"/>'
+    + '<path d="M40 44 l5 -11 5 11 Z" fill="#3f9c54"/>'
+    + '<ellipse cx="54" cy="58" rx="27" ry="23" fill="#7bd88a"/>'
+    + '<circle cx="46" cy="52" r="11" fill="#fff"/><circle cx="66" cy="52" r="11" fill="#fff"/>'
+    + '<circle cx="47" cy="53" r="5" fill="#0a2a44"/><circle cx="67" cy="53" r="5" fill="#0a2a44"/>'
+    + '<circle cx="44" cy="50" r="2" fill="#fff"/><circle cx="64" cy="50" r="2" fill="#fff"/>'
+    + '<circle cx="38" cy="66" r="5" fill="#ff8fa8" opacity=".7"/>'
+    + '<ellipse class="mouth" cx="56" cy="70" rx="10" ry="4" fill="#0a2a44"/>'
+    + '</g>',
+
+  fish:
+    '<path class="wagL" d="M150 102 Q184 76 188 102 Q184 128 150 102 Z" fill="#ff8c2e"/>'
+    + '<path class="wig" d="M86 58 Q98 34 114 56 Z" fill="#ff8c2e"/>'
+    + '<path class="wig" d="M86 152 Q98 176 114 154 Z" fill="#ff8c2e"/>'
+    + '<ellipse cx="92" cy="106" rx="62" ry="50" fill="#ffb04f"/>'
+    + '<path d="M72 62 Q62 106 72 150" stroke="#fff" stroke-width="9" fill="none" opacity=".85"/>'
+    + '<path d="M106 66 Q99 106 106 146" stroke="#fff" stroke-width="9" fill="none" opacity=".85"/>'
+    + '<circle cx="62" cy="96" r="18" fill="#fff"/><circle cx="60" cy="98" r="9" fill="#0a2a44"/>'
+    + '<circle cx="57" cy="94" r="3" fill="#fff"/>'
+    + '<circle cx="52" cy="118" r="7" fill="#ff7a3c" opacity=".6"/>'
+    + '<ellipse class="mouth" cx="44" cy="112" rx="8" ry="6" fill="#0a2a44"/>',
+
+  monster:
+    '<ellipse cx="100" cy="86" rx="58" ry="52" fill="#b483ff"/>'
+    + '<path class="tent" d="M58 122 Q40 166 56 182 Q68 168 72 132 Z" fill="#9a5cf0"/>'
+    + '<path class="tent" d="M82 134 Q74 176 88 186 Q94 168 94 136 Z" fill="#b483ff" style="animation-delay:.15s"/>'
+    + '<path class="tent" d="M108 136 Q116 178 102 186 Q98 170 96 136 Z" fill="#9a5cf0" style="animation-delay:.3s"/>'
+    + '<path class="tent" d="M132 132 Q152 172 138 184 Q128 168 120 132 Z" fill="#b483ff" style="animation-delay:.45s"/>'
+    + '<path class="tent" d="M144 122 Q164 160 150 174 Q140 154 130 126 Z" fill="#9a5cf0" style="animation-delay:.6s"/>'
+    + '<circle cx="82" cy="78" r="18" fill="#fff"/><circle cx="120" cy="78" r="18" fill="#fff"/>'
+    + '<circle cx="84" cy="80" r="8" fill="#0a2a44"/><circle cx="122" cy="80" r="8" fill="#0a2a44"/>'
+    + '<circle cx="81" cy="76" r="3" fill="#fff"/><circle cx="119" cy="76" r="3" fill="#fff"/>'
+    + '<circle cx="66" cy="98" r="7" fill="#ff8fa8" opacity=".7"/><circle cx="134" cy="98" r="7" fill="#ff8fa8" opacity=".7"/>'
+    + '<ellipse class="mouth" cx="101" cy="106" rx="11" ry="7" fill="#0a2a44"/>',
+
+  whale:
+    '<path class="wagL" d="M150 110 Q186 86 190 66 Q193 104 190 130 Q172 122 150 116 Z" fill="#4f86d8"/>'
+    + '<line x1="70" y1="52" x2="62" y2="30" stroke="#bdeeff" stroke-width="6" stroke-linecap="round" opacity=".8"/>'
+    + '<line x1="80" y1="50" x2="84" y2="28" stroke="#bdeeff" stroke-width="6" stroke-linecap="round" opacity=".8"/>'
+    + '<ellipse cx="92" cy="108" rx="70" ry="54" fill="#6ea8ff"/>'
+    + '<ellipse cx="92" cy="128" rx="52" ry="30" fill="#eaf7ff" opacity=".85"/>'
+    + '<circle cx="70" cy="98" r="16" fill="#fff"/><circle cx="110" cy="98" r="16" fill="#fff"/>'
+    + '<circle cx="72" cy="100" r="8" fill="#0a2a44"/><circle cx="112" cy="100" r="8" fill="#0a2a44"/>'
+    + '<circle cx="69" cy="96" r="3" fill="#fff"/><circle cx="109" cy="96" r="3" fill="#fff"/>'
+    + '<circle cx="54" cy="120" r="7" fill="#ff8fa8" opacity=".7"/><circle cx="120" cy="120" r="7" fill="#ff8fa8" opacity=".7"/>'
+    + '<path class="mouth" d="M64 128 Q92 146 120 128 Q92 138 64 128 Z" fill="#0a2a44"/>',
+
+  turtle:
+    '<ellipse cx="96" cy="116" rx="64" ry="50" fill="#4faa78"/>'
+    + '<path d="M96 70 Q150 78 152 116 Q150 156 96 162 Q42 156 40 116 Q42 78 96 70 Z" fill="#7bd8a6"/>'
+    + '<path d="M96 80 L120 100 L110 130 L82 130 L72 100 Z" fill="#4faa78" opacity=".55"/>'
+    + '<path class="wagL" d="M150 118 Q172 110 178 124 Q170 134 150 130 Z" fill="#4faa78"/>'
+    + '<rect x="56" y="158" width="16" height="20" rx="7" fill="#4faa78"/>'
+    + '<rect x="120" y="158" width="16" height="20" rx="7" fill="#4faa78"/>'
+    + '<g class="neck">'
+    + '<ellipse cx="96" cy="58" rx="26" ry="22" fill="#7bd8a6"/>'
+    + '<circle cx="86" cy="54" r="10" fill="#fff"/><circle cx="106" cy="54" r="10" fill="#fff"/>'
+    + '<circle cx="87" cy="55" r="5" fill="#0a2a44"/><circle cx="107" cy="55" r="5" fill="#0a2a44"/>'
+    + '<circle cx="84" cy="52" r="2" fill="#fff"/><circle cx="104" cy="52" r="2" fill="#fff"/>'
+    + '<circle cx="76" cy="64" r="5" fill="#ff8fa8" opacity=".7"/><circle cx="116" cy="64" r="5" fill="#ff8fa8" opacity=".7"/>'
+    + '<ellipse class="mouth" cx="96" cy="68" rx="9" ry="4" fill="#0a2a44"/>'
+    + '</g>',
+
+  crab:
+    '<path class="wig" d="M44 96 Q14 80 18 56 Q30 78 52 84 Z" fill="#ff7a5c"/>'
+    + '<path class="wig" d="M148 96 Q178 80 174 56 Q162 78 140 84 Z" fill="#ff7a5c"/>'
+    + '<ellipse cx="96" cy="110" rx="66" ry="46" fill="#ff8f7a"/>'
+    + '<ellipse cx="96" cy="122" rx="44" ry="24" fill="#ffd0c4" opacity=".7"/>'
+    + '<rect x="40" y="150" width="12" height="20" rx="6" fill="#ff7a5c"/>'
+    + '<rect x="70" y="156" width="12" height="20" rx="6" fill="#ff7a5c"/>'
+    + '<rect x="110" y="156" width="12" height="20" rx="6" fill="#ff7a5c"/>'
+    + '<rect x="140" y="150" width="12" height="20" rx="6" fill="#ff7a5c"/>'
+    + '<line x1="80" y1="74" x2="76" y2="54" stroke="#ff7a5c" stroke-width="5" stroke-linecap="round"/>'
+    + '<line x1="112" y1="74" x2="116" y2="54" stroke="#ff7a5c" stroke-width="5" stroke-linecap="round"/>'
+    + '<circle cx="76" cy="50" r="8" fill="#fff"/><circle cx="116" cy="50" r="8" fill="#fff"/>'
+    + '<circle cx="77" cy="51" r="4" fill="#0a2a44"/><circle cx="117" cy="51" r="4" fill="#0a2a44"/>'
+    + '<circle cx="66" cy="106" r="7" fill="#ff5e7a" opacity=".6"/><circle cx="126" cy="106" r="7" fill="#ff5e7a" opacity=".6"/>'
+    + '<path class="mouth" d="M80 116 Q96 130 112 116 Q96 124 80 116 Z" fill="#0a2a44"/>',
+
+  seahorse:
+    '<path class="wagL" d="M150 118 Q182 108 186 128 Q176 140 150 132 Z" fill="#e0b24c"/>'
+    + '<ellipse cx="94" cy="116" rx="66" ry="52" fill="#ffcf5c"/>'
+    + '<ellipse cx="94" cy="130" rx="46" ry="28" fill="#fff0c8" opacity=".8"/>'
+    + '<path d="M150 150 Q172 168 150 178 Q140 166 138 152 Z" fill="#e0b24c"/>'
+    + '<ellipse cx="70" cy="64" rx="34" ry="28" fill="#ffcf5c"/>'
+    + '<path class="wig" d="M60 40 Q70 22 84 40 Z" fill="#e0b24c"/>'
+    + '<circle cx="60" cy="60" r="13" fill="#fff"/><circle cx="90" cy="60" r="13" fill="#fff"/>'
+    + '<circle cx="62" cy="62" r="6" fill="#0a2a44"/><circle cx="92" cy="62" r="6" fill="#0a2a44"/>'
+    + '<circle cx="59" cy="58" r="2" fill="#fff"/><circle cx="89" cy="58" r="2" fill="#fff"/>'
+    + '<circle cx="50" cy="74" r="6" fill="#ff8fa8" opacity=".7"/><circle cx="100" cy="74" r="6" fill="#ff8fa8" opacity=".7"/>'
+    + '<ellipse class="mouth" cx="75" cy="80" rx="10" ry="6" fill="#0a2a44"/>',
+
+  dog:
+    '<path class="wagL" d="M150 122 Q178 108 184 124 Q176 138 150 132 Z" fill="#c8965a"/>'
+    + '<ellipse cx="100" cy="122" rx="60" ry="48" fill="#e7bd86"/>'
+    + '<rect x="78" y="158" width="16" height="20" rx="7" fill="#c8965a"/>'
+    + '<rect x="106" y="158" width="16" height="20" rx="7" fill="#c8965a"/>'
+    + '<path class="wig" d="M62 58 Q42 70 50 112 Q68 104 72 76 Z" fill="#c8965a"/>'
+    + '<path class="wig" d="M138 58 Q158 70 150 112 Q132 104 128 76 Z" fill="#c8965a" style="animation-delay:.2s"/>'
+    + '<ellipse cx="100" cy="88" rx="46" ry="42" fill="#e7bd86"/>'
+    + '<ellipse cx="100" cy="104" rx="24" ry="18" fill="#f6ddb8"/>'
+    + '<ellipse cx="100" cy="96" rx="8" ry="6" fill="#0a2a44"/>'
+    + '<circle cx="82" cy="76" r="15" fill="#fff"/><circle cx="118" cy="76" r="15" fill="#fff"/>'
+    + '<circle cx="84" cy="78" r="7" fill="#0a2a44"/><circle cx="120" cy="78" r="7" fill="#0a2a44"/>'
+    + '<circle cx="81" cy="74" r="2.5" fill="#fff"/><circle cx="117" cy="74" r="2.5" fill="#fff"/>'
+    + '<circle cx="66" cy="98" r="7" fill="#ff8fa8" opacity=".6"/><circle cx="134" cy="98" r="7" fill="#ff8fa8" opacity=".6"/>'
+    + '<path class="mouth" d="M86 110 Q100 122 114 110 Q100 118 86 110 Z" fill="#0a2a44"/>',
+
+  cat:
+    '<path class="wagL" d="M150 130 Q182 120 184 150 Q174 158 150 142 Z" fill="#d98f3e"/>'
+    + '<ellipse cx="100" cy="124" rx="56" ry="46" fill="#f0a85a"/>'
+    + '<path d="M62 56 L54 28 L86 50 Z" fill="#f0a85a"/><path d="M138 56 L146 28 L114 50 Z" fill="#f0a85a"/>'
+    + '<path d="M66 52 L62 38 L78 50 Z" fill="#ffd0b0"/><path d="M134 52 L138 38 L122 50 Z" fill="#ffd0b0"/>'
+    + '<ellipse cx="100" cy="84" rx="44" ry="40" fill="#f0a85a"/>'
+    + '<circle cx="82" cy="78" r="14" fill="#fff"/><circle cx="118" cy="78" r="14" fill="#fff"/>'
+    + '<ellipse cx="83" cy="80" rx="5" ry="9" fill="#0a2a44"/><ellipse cx="119" cy="80" rx="5" ry="9" fill="#0a2a44"/>'
+    + '<circle cx="80" cy="76" r="2" fill="#fff"/><circle cx="116" cy="76" r="2" fill="#fff"/>'
+    + '<path d="M96 96 L100 100 L104 96 Z" fill="#ff8fa8"/>'
+    + '<circle cx="68" cy="94" r="6" fill="#ff8fa8" opacity=".55"/><circle cx="132" cy="94" r="6" fill="#ff8fa8" opacity=".55"/>'
+    + '<line x1="58" y1="92" x2="34" y2="86" stroke="#fff" stroke-width="2.5" opacity=".8"/>'
+    + '<line x1="58" y1="98" x2="34" y2="102" stroke="#fff" stroke-width="2.5" opacity=".8"/>'
+    + '<line x1="142" y1="92" x2="166" y2="86" stroke="#fff" stroke-width="2.5" opacity=".8"/>'
+    + '<line x1="142" y1="98" x2="166" y2="102" stroke="#fff" stroke-width="2.5" opacity=".8"/>'
+    + '<ellipse class="mouth" cx="100" cy="106" rx="8" ry="5" fill="#0a2a44"/>',
+
+  rabbit:
+    '<ellipse class="wig" cx="80" cy="44" rx="11" ry="34" fill="#f3f0ef"/>'
+    + '<ellipse class="wig" cx="120" cy="44" rx="11" ry="34" fill="#f3f0ef" style="animation-delay:.2s"/>'
+    + '<ellipse cx="80" cy="46" rx="5" ry="24" fill="#ffc2d1"/><ellipse cx="120" cy="46" rx="5" ry="24" fill="#ffc2d1"/>'
+    + '<ellipse cx="100" cy="128" rx="54" ry="48" fill="#f3f0ef"/>'
+    + '<ellipse cx="100" cy="92" rx="42" ry="38" fill="#f3f0ef"/>'
+    + '<circle cx="84" cy="86" r="13" fill="#fff"/><circle cx="116" cy="86" r="13" fill="#fff"/>'
+    + '<circle cx="85" cy="88" r="7" fill="#0a2a44"/><circle cx="117" cy="88" r="7" fill="#0a2a44"/>'
+    + '<circle cx="82" cy="84" r="2.5" fill="#fff"/><circle cx="114" cy="84" r="2.5" fill="#fff"/>'
+    + '<path d="M96 100 L100 104 L104 100 Z" fill="#ff8fa8"/>'
+    + '<circle cx="70" cy="102" r="7" fill="#ffb3c6" opacity=".7"/><circle cx="130" cy="102" r="7" fill="#ffb3c6" opacity=".7"/>'
+    + '<ellipse class="mouth" cx="100" cy="112" rx="7" ry="4" fill="#0a2a44"/>'
+    + '<rect x="96" y="113" width="3.5" height="6" rx="1" fill="#fff"/><rect x="100.5" y="113" width="3.5" height="6" rx="1" fill="#fff"/>',
+
+  bird:
+    '<path class="wagL" d="M58 116 Q30 110 24 132 Q44 138 64 128 Z" fill="#e8b800"/>'
+    + '<ellipse cx="100" cy="112" rx="50" ry="46" fill="#ffd24d"/>'
+    + '<path class="wig" d="M138 96 Q170 96 172 120 Q150 122 134 112 Z" fill="#f3c01f"/>'
+    + '<path d="M96 28 Q100 14 104 28 Z" fill="#f3c01f"/>'
+    + '<circle cx="100" cy="78" r="34" fill="#ffd24d"/>'
+    + '<circle cx="88" cy="74" r="13" fill="#fff"/><circle cx="112" cy="74" r="13" fill="#fff"/>'
+    + '<circle cx="89" cy="76" r="6.5" fill="#0a2a44"/><circle cx="113" cy="76" r="6.5" fill="#0a2a44"/>'
+    + '<circle cx="86" cy="72" r="2.5" fill="#fff"/><circle cx="110" cy="72" r="2.5" fill="#fff"/>'
+    + '<path class="mouth" d="M92 88 L100 100 L108 88 Z" fill="#ff8c2e"/>'
+    + '<circle cx="74" cy="90" r="6" fill="#ff8fa8" opacity=".55"/><circle cx="126" cy="90" r="6" fill="#ff8fa8" opacity=".55"/>'
+    + '<line x1="92" y1="156" x2="92" y2="172" stroke="#ff8c2e" stroke-width="4" stroke-linecap="round"/>'
+    + '<line x1="108" y1="156" x2="108" y2="172" stroke="#ff8c2e" stroke-width="4" stroke-linecap="round"/>',
+
+  hamster:
+    '<ellipse cx="100" cy="116" rx="62" ry="54" fill="#f0c987"/>'
+    + '<ellipse cx="100" cy="130" rx="42" ry="34" fill="#fbe8c8" opacity=".85"/>'
+    + '<circle class="wig" cx="60" cy="68" r="15" fill="#f0c987"/>'
+    + '<circle class="wig" cx="140" cy="68" r="15" fill="#f0c987" style="animation-delay:.2s"/>'
+    + '<circle cx="60" cy="68" r="8" fill="#f3b9a0"/><circle cx="140" cy="68" r="8" fill="#f3b9a0"/>'
+    + '<circle cx="84" cy="92" r="14" fill="#fff"/><circle cx="116" cy="92" r="14" fill="#fff"/>'
+    + '<circle cx="85" cy="94" r="7" fill="#0a2a44"/><circle cx="117" cy="94" r="7" fill="#0a2a44"/>'
+    + '<circle cx="82" cy="90" r="2.5" fill="#fff"/><circle cx="114" cy="90" r="2.5" fill="#fff"/>'
+    + '<ellipse cx="100" cy="108" rx="6" ry="4" fill="#0a2a44"/>'
+    + '<circle cx="66" cy="108" r="8" fill="#ffb3c6" opacity=".7"/><circle cx="134" cy="108" r="8" fill="#ffb3c6" opacity=".7"/>'
+    + '<ellipse class="mouth" cx="100" cy="120" rx="7" ry="4" fill="#0a2a44"/>'
+    + '<rect x="96" y="121" width="3.5" height="6" rx="1" fill="#fff"/><rect x="100.5" y="121" width="3.5" height="6" rx="1" fill="#fff"/>',
+
+  snake:
+    '<path d="M96 106 C152 92 174 138 138 164 C112 184 92 156 116 142" stroke="#5aa856" stroke-width="22" fill="none" stroke-linecap="round"/>'
+    + '<path d="M120 146 l16 -3 l-9 14 Z" fill="#5aa856"/>'
+    + '<ellipse cx="86" cy="92" rx="40" ry="34" fill="#6fc36a"/>'
+    + '<ellipse cx="86" cy="104" rx="26" ry="14" fill="#bfe8b0" opacity=".7"/>'
+    + '<circle cx="74" cy="84" r="13" fill="#fff"/><circle cx="100" cy="84" r="13" fill="#fff"/>'
+    + '<circle cx="75" cy="86" r="6.5" fill="#0a2a44"/><circle cx="101" cy="86" r="6.5" fill="#0a2a44"/>'
+    + '<circle cx="72" cy="82" r="2.5" fill="#fff"/><circle cx="98" cy="82" r="2.5" fill="#fff"/>'
+    + '<circle cx="60" cy="98" r="6" fill="#ff8fa8" opacity=".55"/><circle cx="112" cy="98" r="6" fill="#ff8fa8" opacity=".55"/>'
+    + '<ellipse class="mouth" cx="86" cy="108" rx="9" ry="5" fill="#0a2a44"/>'
+    + '<path class="wig" d="M86 113 q-3 10 -7 13 q3 -1 7 -8 q4 7 7 8 q-4 -3 -7 -13 Z" fill="#ff5e7a"/>',
+
+  jellyfish:
+    '<path class="tent" d="M64 120 Q56 164 68 182 Q78 166 78 124 Z" fill="#ffaad4"/>'
+    + '<path class="tent" d="M84 126 Q78 168 90 184 Q96 168 96 128 Z" fill="#ff8fc6" style="animation-delay:.15s"/>'
+    + '<path class="tent" d="M104 128 Q98 170 110 184 Q116 168 116 128 Z" fill="#ffaad4" style="animation-delay:.3s"/>'
+    + '<path class="tent" d="M124 124 Q132 166 120 182 Q114 166 112 124 Z" fill="#ff8fc6" style="animation-delay:.45s"/>'
+    + '<path class="tent" d="M138 120 Q146 160 134 176 Q126 160 126 122 Z" fill="#ffaad4" style="animation-delay:.6s"/>'
+    + '<path d="M40 110 Q40 56 100 56 Q160 56 160 110 Q160 122 148 122 L52 122 Q40 122 40 110 Z" fill="#ffc2e0" opacity=".92"/>'
+    + '<circle cx="84" cy="98" r="13" fill="#fff"/><circle cx="116" cy="98" r="13" fill="#fff"/>'
+    + '<circle cx="85" cy="100" r="6.5" fill="#0a2a44"/><circle cx="117" cy="100" r="6.5" fill="#0a2a44"/>'
+    + '<circle cx="82" cy="96" r="2.5" fill="#fff"/><circle cx="114" cy="96" r="2.5" fill="#fff"/>'
+    + '<circle cx="70" cy="110" r="6" fill="#ff6fa8" opacity=".5"/><circle cx="130" cy="110" r="6" fill="#ff6fa8" opacity=".5"/>'
+    + '<ellipse class="mouth" cx="100" cy="112" rx="9" ry="5" fill="#0a2a44"/>',
+
+  bee:
+    '<ellipse class="wig" cx="66" cy="70" rx="22" ry="13" fill="#cdeaff" opacity=".85" transform="rotate(-18 66 70)"/>'
+    + '<ellipse class="wig" cx="134" cy="70" rx="22" ry="13" fill="#cdeaff" opacity=".85" transform="rotate(18 134 70)" style="animation-delay:.1s"/>'
+    + '<ellipse cx="100" cy="116" rx="52" ry="46" fill="#ffd23f"/>'
+    + '<path d="M70 92 Q100 86 130 92 L128 104 Q100 110 72 104 Z" fill="#2b2b2b"/>'
+    + '<path d="M66 118 Q100 114 134 118 L132 132 Q100 138 68 132 Z" fill="#2b2b2b"/>'
+    + '<path d="M78 148 Q100 156 122 148 L116 158 Q100 164 84 158 Z" fill="#2b2b2b"/>'
+    + '<circle cx="86" cy="80" r="13" fill="#fff"/><circle cx="114" cy="80" r="13" fill="#fff"/>'
+    + '<circle cx="87" cy="82" r="6.5" fill="#0a2a44"/><circle cx="115" cy="82" r="6.5" fill="#0a2a44"/>'
+    + '<circle cx="84" cy="78" r="2.5" fill="#fff"/><circle cx="112" cy="78" r="2.5" fill="#fff"/>'
+    + '<line x1="90" y1="64" x2="84" y2="46" stroke="#2b2b2b" stroke-width="3" stroke-linecap="round"/><circle cx="83" cy="44" r="4" fill="#2b2b2b"/>'
+    + '<line x1="110" y1="64" x2="116" y2="46" stroke="#2b2b2b" stroke-width="3" stroke-linecap="round"/><circle cx="117" cy="44" r="4" fill="#2b2b2b"/>'
+    + '<circle cx="72" cy="96" r="6" fill="#ff8fa8" opacity=".55"/><circle cx="128" cy="96" r="6" fill="#ff8fa8" opacity=".55"/>'
+    + '<ellipse class="mouth" cx="100" cy="96" rx="8" ry="5" fill="#0a2a44"/>',
+
+  crocodile:
+    '<path class="wagL" d="M152 130 Q188 120 192 100 Q194 132 190 150 Q172 142 152 138 Z" fill="#4f9a52"/>'
+    + '<ellipse cx="92" cy="124" rx="62" ry="40" fill="#62b566"/>'
+    + '<rect x="60" y="156" width="14" height="18" rx="6" fill="#4f9a52"/>'
+    + '<rect x="104" y="156" width="14" height="18" rx="6" fill="#4f9a52"/>'
+    + '<path d="M70 118 l6 -12 6 12 Z" fill="#3f8a42"/><path d="M92 114 l6 -12 6 12 Z" fill="#3f8a42"/><path d="M114 118 l6 -12 6 12 Z" fill="#3f8a42"/>'
+    + '<ellipse cx="64" cy="104" rx="50" ry="22" fill="#62b566"/>'
+    + '<ellipse cx="50" cy="80" rx="14" ry="12" fill="#62b566"/><ellipse cx="80" cy="80" rx="14" ry="12" fill="#62b566"/>'
+    + '<circle cx="50" cy="78" r="9" fill="#fff"/><circle cx="80" cy="78" r="9" fill="#fff"/>'
+    + '<circle cx="51" cy="79" r="4.5" fill="#0a2a44"/><circle cx="81" cy="79" r="4.5" fill="#0a2a44"/>'
+    + '<circle cx="49" cy="76" r="1.8" fill="#fff"/><circle cx="79" cy="76" r="1.8" fill="#fff"/>'
+    + '<path class="mouth" d="M18 108 Q64 122 106 108 Q64 116 18 108 Z" fill="#0a2a44"/>'
+    + '<path d="M28 110 l4 6 4 -6 Z" fill="#fff"/><path d="M42 111 l4 6 4 -6 Z" fill="#fff"/><path d="M56 112 l4 6 4 -6 Z" fill="#fff"/><path d="M70 112 l4 6 4 -6 Z" fill="#fff"/><path d="M84 111 l4 6 4 -6 Z" fill="#fff"/>',
+
+  lion:
+    '<path class="wagL" d="M150 142 Q182 136 186 160 Q174 164 150 152 Z" fill="#e08a2e"/>'
+    + '<ellipse cx="100" cy="130" rx="54" ry="44" fill="#f0b850"/>'
+    + '<circle cx="148" cy="84" r="14" fill="#e8983a"/><circle cx="134" cy="118" r="14" fill="#e8983a"/>'
+    + '<circle cx="100" cy="132" r="14" fill="#e8983a"/><circle cx="66" cy="118" r="14" fill="#e8983a"/>'
+    + '<circle cx="52" cy="84" r="14" fill="#e8983a"/><circle cx="66" cy="50" r="14" fill="#e8983a"/>'
+    + '<circle cx="100" cy="36" r="14" fill="#e8983a"/><circle cx="134" cy="50" r="14" fill="#e8983a"/>'
+    + '<circle class="wig" cx="74" cy="54" r="11" fill="#f0b850"/><circle class="wig" cx="126" cy="54" r="11" fill="#f0b850" style="animation-delay:.2s"/>'
+    + '<circle cx="100" cy="86" r="40" fill="#f5c873"/>'
+    + '<ellipse cx="100" cy="100" rx="22" ry="15" fill="#f8d89a"/>'
+    + '<circle cx="86" cy="80" r="13" fill="#fff"/><circle cx="114" cy="80" r="13" fill="#fff"/>'
+    + '<circle cx="87" cy="82" r="6.5" fill="#0a2a44"/><circle cx="115" cy="82" r="6.5" fill="#0a2a44"/>'
+    + '<circle cx="84" cy="78" r="2.5" fill="#fff"/><circle cx="112" cy="78" r="2.5" fill="#fff"/>'
+    + '<path d="M93 94 Q100 90 107 94 Q100 102 93 94 Z" fill="#7a4a32"/>'
+    + '<circle cx="70" cy="98" r="6" fill="#ff8fa8" opacity=".55"/><circle cx="130" cy="98" r="6" fill="#ff8fa8" opacity=".55"/>'
+    + '<path class="mouth" d="M88 106 Q100 116 112 106 Q100 112 88 106 Z" fill="#0a2a44"/>',
+
+  elephant:
+    '<ellipse cx="104" cy="126" rx="58" ry="48" fill="#9fb0c0"/>'
+    + '<rect x="84" y="162" width="18" height="18" rx="7" fill="#8a9cad"/>'
+    + '<rect x="116" y="162" width="18" height="18" rx="7" fill="#8a9cad"/>'
+    + '<ellipse class="wig" cx="58" cy="98" rx="30" ry="34" fill="#8a9cad"/>'
+    + '<ellipse class="wig" cx="150" cy="98" rx="30" ry="34" fill="#8a9cad" style="animation-delay:.2s"/>'
+    + '<ellipse cx="104" cy="94" rx="46" ry="42" fill="#9fb0c0"/>'
+    + '<circle cx="90" cy="84" r="12" fill="#fff"/><circle cx="118" cy="84" r="12" fill="#fff"/>'
+    + '<circle cx="91" cy="86" r="6" fill="#0a2a44"/><circle cx="119" cy="86" r="6" fill="#0a2a44"/>'
+    + '<circle cx="88" cy="82" r="2.2" fill="#fff"/><circle cx="116" cy="82" r="2.2" fill="#fff"/>'
+    + '<circle cx="74" cy="100" r="6" fill="#ff8fa8" opacity=".5"/><circle cx="134" cy="100" r="6" fill="#ff8fa8" opacity=".5"/>'
+    + '<ellipse class="mouth" cx="104" cy="110" rx="8" ry="4" fill="#0a2a44"/>'
+    + '<path d="M104 116 Q92 152 78 168 Q90 154 96 124" stroke="#9fb0c0" stroke-width="20" fill="none" stroke-linecap="round"/>'
+    + '<path d="M96 130 l-4 16 6 -4 Z" fill="#fff"/><path d="M112 130 l4 16 -6 -4 Z" fill="#fff"/>',
+
+  monkey:
+    '<path d="M150 132 q34 4 32 -28 q-4 28 -28 34 Z" fill="#8a5d31"/>'
+    + '<ellipse cx="100" cy="126" rx="52" ry="44" fill="#a9743f"/>'
+    + '<circle class="wig" cx="60" cy="76" r="18" fill="#a9743f"/>'
+    + '<circle class="wig" cx="140" cy="76" r="18" fill="#a9743f" style="animation-delay:.2s"/>'
+    + '<circle cx="60" cy="76" r="10" fill="#c79a6a"/><circle cx="140" cy="76" r="10" fill="#c79a6a"/>'
+    + '<circle cx="100" cy="86" r="42" fill="#a9743f"/>'
+    + '<ellipse cx="100" cy="100" rx="34" ry="31" fill="#e9c9a0"/>'
+    + '<circle cx="86" cy="84" r="12" fill="#fff"/><circle cx="114" cy="84" r="12" fill="#fff"/>'
+    + '<circle cx="87" cy="86" r="6" fill="#0a2a44"/><circle cx="115" cy="86" r="6" fill="#0a2a44"/>'
+    + '<circle cx="84" cy="82" r="2.2" fill="#fff"/><circle cx="112" cy="82" r="2.2" fill="#fff"/>'
+    + '<circle cx="94" cy="102" r="1.8" fill="#0a2a44"/><circle cx="106" cy="102" r="1.8" fill="#0a2a44"/>'
+    + '<circle cx="72" cy="102" r="6" fill="#ff8fa8" opacity=".5"/><circle cx="128" cy="102" r="6" fill="#ff8fa8" opacity=".5"/>'
+    + '<path class="mouth" d="M86 110 Q100 120 114 110 Q100 116 86 110 Z" fill="#0a2a44"/>'
+};
+var currentKey = 'robot';
+function renderAvatar(key){
+  currentKey = key;
+  var slot=document.getElementById('avatarSlot');
+  slot.innerHTML = SVG_OPEN + (AVATARS[key]||AVATARS.robot) + '</svg>';
+  var big=document.getElementById('bigAvatarSlot');
+  if(big) big.innerHTML = SVG_OPEN_BIG + (AVATARS[key]||AVATARS.robot) + '</svg>';
+  updateBigName();
+}
+function updateBigName(){
+  var n=document.getElementById('bigName'); if(!n) return;
+  var a=ANIMALS[currentKey];
+  n.textContent = a ? (lang==='th'?a.th:a.en) : '';
+}
+function openBig(){ var b=document.getElementById('bigStage'); if(b) b.classList.add('show'); }
+function closeBig(){ var b=document.getElementById('bigStage'); if(b) b.classList.remove('show'); }
+
+/* ---------------- ambient build ---------------- */
+(function(){
+  var amb = document.getElementById('ambient');
+  for(var i=0;i<16;i++){
+    var b=document.createElement('div'); b.className='bubble';
+    var s=6+Math.random()*22;
+    b.style.width=s+'px'; b.style.height=s+'px';
+    b.style.left=(Math.random()*100)+'vw';
+    b.style.animationDuration=(7+Math.random()*9)+'s';
+    b.style.animationDelay=(-Math.random()*10)+'s';
+    amb.appendChild(b);
+  }
+  var fishes=['\uD83D\uDC1F','\uD83D\uDC20','\uD83E\uDD88','\uD83D\uDC19','\uD83D\uDC22'];
+  for(var j=0;j<5;j++){
+    var f=document.createElement('div'); f.className='swimmer';
+    f.textContent=fishes[j%fishes.length];
+    f.style.top=(10+Math.random()*75)+'vh';
+    f.style.animationDuration=(18+Math.random()*16)+'s';
+    f.style.animationDelay=(-Math.random()*20)+'s';
+    amb.appendChild(f);
+  }
+})();
+
+/* ---------------- UI helpers ---------------- */
+function setLang(l){
+  lang=l;
+  document.getElementById('thBtn').classList.toggle('on', l==='th');
+  document.getElementById('enBtn').classList.toggle('on', l==='en');
+  document.documentElement.lang = l;
+  document.querySelectorAll('[data-rep]').forEach(function(el){
+    var k=el.getAttribute('data-rep');
+    if(T[l][k]!==undefined) el.textContent=T[l][k];
+  });
+  document.getElementById('catBackLbl').textContent = T[l].cats;
+  buildGrid();        // re-label category / animal buttons in the new language
+  updateCatTitle();
+  updateBigName();
+  if(typeof setMicVisual==='function') setMicVisual();
+  if(!busy) showIdle();
+}
+
+/* ---------------- categories + animal grids ---------------- */
+var view = 'home';     // 'home' = category buttons, 'cat' = animals in a category
+var currentCat = null;
+function buildGrid(){
+  var g=document.getElementById('grid');
+  if(!g) return;
+  g.innerHTML='';
+  if(view==='home'){
+    g.className='grid cats';
+    document.getElementById('navbar').classList.remove('on');
+    CATEGORIES.forEach(function(c){
+      var b=document.createElement('button');
+      b.className='cat';
+      b.style.background=c.color;
+      b.onclick=function(){ openCategory(c.key); };
+      b.innerHTML='<span class="ico">'+c.emoji+'</span><span>'+(lang==='th'?c.th:c.en)+'</span>';
+      g.appendChild(b);
+    });
+  }else{
+    g.className='grid';
+    document.getElementById('navbar').classList.add('on');
+    var cat=catByKey(currentCat);
+    if(cat) cat.animals.forEach(function(k,i){
+      var a=ANIMALS[k]; if(!a) return;
+      var b=document.createElement('button');
+      b.className='crt';
+      b.style.background=BTN_COLORS[i % BTN_COLORS.length];
+      b.onclick=function(){ askAnimal(k); };
+      b.innerHTML='<span class="ico">'+a.emoji+'</span><span>'+(lang==='th'?a.th:a.en)+'</span>';
+      g.appendChild(b);
+    });
+  }
+}
+function catByKey(k){ for(var i=0;i<CATEGORIES.length;i++){ if(CATEGORIES[i].key===k) return CATEGORIES[i]; } return null; }
+function updateCatTitle(){
+  var t=document.getElementById('catTitle'); if(!t) return;
+  var cat=catByKey(currentCat);
+  t.textContent = (view==='cat' && cat) ? (lang==='th'?cat.th:cat.en) : '';
+}
+function showHome(){
+  view='home'; currentCat=null;
+  buildGrid(); updateCatTitle();
+}
+function openCategory(key){
+  view='cat'; currentCat=key;
+  buildGrid(); updateCatTitle();
+}
+function setAnswerText(txt){
+  document.getElementById('answer').textContent=txt;
+  var b=document.getElementById('bigAnswer'); if(b) b.textContent=txt;
+}
+function setAnswerHTML(html){
+  document.getElementById('answer').innerHTML=html;
+  var b=document.getElementById('bigAnswer'); if(b) b.innerHTML=html;
+}
+function setRepliesOn(on){
+  var list=document.querySelectorAll('.replies');
+  for(var i=0;i<list.length;i++){ list[i].classList.toggle('on', on); }
+}
+function showIdle(){
+  document.getElementById('speech').classList.add('idle');
+  var bs=document.getElementById('bigSpeech'); if(bs) bs.classList.add('idle');
+  setAnswerText(T[lang].idle);
+  setRepliesOn(false);
+  document.getElementById('hint').textContent='';
+}
+function setState(s){
+  ['stage','bigAvatarWrap'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(!el) return;
+    el.classList.remove('listening','thinking','talking');
+    if(s) el.classList.add(s);
+  });
+}
+var currentEmoji = '🤖';
+var creatureEmoji = {shark:'🦈', dino:'🦕', fish:'🐠', monster:'🐙', whale:'🐋', turtle:'🐢', crab:'🦀', seahorse:'🦭', robot:'🤖'};
+
+function setThinking(){
+  busy=true; setState('thinking');
+  document.getElementById('speech').classList.remove('idle');
+  var bs=document.getElementById('bigSpeech'); if(bs) bs.classList.remove('idle');
+  setAnswerHTML('<span class="bounce">'+currentEmoji+'</span>');
+  document.getElementById('hint').textContent=T[lang].thinking;
+}
+function showAnswer(text){
+  document.getElementById('speech').classList.remove('idle');
+  var bs=document.getElementById('bigSpeech'); if(bs) bs.classList.remove('idle');
+  setAnswerText(text);
+  setRepliesOn(true);
+  document.getElementById('hint').textContent=T[lang].chathint;
+}
+
+/* ---------------- speech output ---------------- */
+function speak(text){
+  try{
+    if(!('speechSynthesis' in window)){ setState(null); busy=false; return; }
+    var u=new SpeechSynthesisUtterance(text);
+    u.lang = (lang==='th')?'th-TH':'en-US';
+    u.rate = (lang==='th')?0.92:0.88;
+    u.pitch = 1.18;
+    var voices=window.speechSynthesis.getVoices();
+    var want = voices.filter(function(v){ return v.lang && v.lang.toLowerCase().indexOf(lang==='th'?'th':'en')===0; });
+    if(want.length){
+      var nice = want.find(function(v){return /kanya|google|samantha|nicky|aaron/i.test(v.name);});
+      u.voice = nice||want[0];
+    }
+    u.onstart=function(){ jarvisSpeaking=true; setState('talking'); };
+    u.onend=function(){ jarvisSpeaking=false; muteUntil=Date.now()+1200; setState(null); busy=false; };
+    u.onerror=function(){ jarvisSpeaking=false; muteUntil=Date.now()+1200; setState(null); busy=false; };
+    curUtter=u;
+    window.speechSynthesis.speak(u);
+  }catch(e){ setState(null); busy=false; }
+}
+
+// Stop whatever Jarvis is SAYING right now (used when a child taps something new).
+function stopJarvis(){
+  reqId++;  // any answer still loading from before is now ignored
+  jarvisSpeaking=false;
+  if(curUtter){ curUtter.onstart=null; curUtter.onend=null; curUtter.onerror=null; curUtter=null; }
+  if('speechSynthesis' in window) window.speechSynthesis.cancel();
+  busy=false; setState(null);
+  if(micOn) setMicVisual();   // keep mic showing its on/off colour
+}
+// warm up voices list on iOS
+if('speechSynthesis' in window){ window.speechSynthesis.onvoiceschanged=function(){}; }
+
+// quick excited word spoken the instant a button is tapped (no API wait)
+function sayFiller(text){
+  try{
+    if(!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    var u=new SpeechSynthesisUtterance(text);
+    u.lang=(lang==='th')?'th-TH':'en-US';
+    u.rate=0.98; u.pitch=1.3;
+    var voices=window.speechSynthesis.getVoices();
+    var want=voices.filter(function(v){return v.lang && v.lang.toLowerCase().indexOf(lang==='th'?'th':'en')===0;});
+    if(want.length){var nice=want.find(function(v){return /kanya|google|samantha|nicky|aaron/i.test(v.name);});u.voice=nice||want[0];}
+    u.onstart=function(){ jarvisSpeaking=true; };
+    u.onend=function(){ jarvisSpeaking=false; muteUntil=Date.now()+900; };
+    u.onerror=function(){ jarvisSpeaking=false; muteUntil=Date.now()+900; };
+    window.speechSynthesis.speak(u);
+  }catch(e){}
+}
+
+function tapJarvis(){
+  if('speechSynthesis' in window) window.speechSynthesis.cancel();
+  jarvisSpeaking=false; muteUntil=Date.now()+500;
+  setState(null); busy=false;
+  if(convo.length===0) showIdle();
+}
+
+/* ---------------- Jarvis brain (via secure Netlify function) ---------------- */
+var convo = [];      // running chat history sent to the server
+var topicName = '';  // current animal we are talking about
+
+function callJarvis(userText){
+  var myId = ++reqId;          // mark this as the newest request
+  setThinking();
+  if(convo.length && convo[convo.length-1].role==='user'){ convo.pop(); } // drop leftover from an interrupted turn
+  convo.push({role:'user', content:userText});
+  if(convo.length>10) convo = convo.slice(-10);
+  fetch("/.netlify/functions/jarvis",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({ messages: convo, lang: lang })
+  })
+  .then(function(r){
+    var status=r.status;
+    return r.text().then(function(raw){
+      var d=null; try{ d=JSON.parse(raw); }catch(e){}
+      return { ok:r.ok, status:status, d:d, raw:raw };
+    });
+  })
+  .then(function(res){
+    if(myId!==reqId) return;   // a newer tap replaced this one — ignore the old answer
+    var text = (res.d && res.d.text) ? String(res.d.text).trim() : '';
+    if(res.ok && text){
+      convo.push({role:'assistant', content:text});
+      showAnswer(text);
+      speak(text);
+      return;
+    }
+    // something went wrong — show friendly Oops to the child, real reason to the parent
+    busy=false; setState(null);
+    showAnswer(T[lang].oops);
+    speak(T[lang].oops);
+    var reason;
+    if(res.d && res.d.error){ reason = res.d.error; }
+    else if(res.status===404){ reason = 'Function not found (404) — the Jarvis function did not deploy. Re-upload the zip on its own.'; }
+    else if(!res.d){ reason = 'Server replied with status '+res.status+' (not JSON): '+String(res.raw).slice(0,120); }
+    else { reason = 'No answer from Jarvis (status '+res.status+').'; }
+    showDiag('Server says: '+reason);
+  })
+  .catch(function(err){
+    if(myId!==reqId) return;
+    busy=false; setState(null);
+    showAnswer(T[lang].oops);
+    speak(T[lang].oops);
+    showDiag('Could not reach the Jarvis function: '+String(err && err.message ? err.message : err));
+  });
+}
+
+var currentDanger = false;
+function askAnimal(key){
+  var a = ANIMALS[key]; if(!a) return;
+  stopJarvis();                     // interrupt anything in progress, instantly
+  renderAvatar(key);                // the talking character becomes this animal
+  openBig();                        // open the big immersive creature view
+  currentEmoji = a.emoji || '🐟';
+  sayFiller(lang==='th' ? a.fillTh : a.fillEn);   // instant happy sound, no waiting
+  convo = [];                       // start a fresh chat about this animal
+  topicName = a.topic;
+  currentDanger = !!a.danger;
+  var angle=angles[Math.floor(Math.random()*angles.length)];
+  var safety = a.danger
+    ? " IMPORTANT: this animal can be dangerous to a little child. In a calm, happy, gentle way (never scary) remind the child that we only LOOK from far away, we NEVER touch it, and we always tell Mommy or Daddy if we see one."
+    : "";
+  var prompt = "Let's talk about " + topicName + ". Tell me one " + angle
+    + " fun thing about them, in " + T[lang].langName + ", for a 3 year old. Keep it tiny and playful." + safety;
+  callJarvis(prompt);
+}
+
+// Child taps a colored button to chat back; we send it as their reply.
+function reply(kind){
+  if(convo.length===0) return;      // nothing to reply to yet
+  stopJarvis();                     // interrupt, then continue the chat
+  var map = { yes:T[lang].rYes, more:T[lang].rMore, why:T[lang].rWhy, wow:T[lang].rWow, no:T[lang].rNo, next:T[lang].rNext };
+  var said = map[kind] || T[lang].rMore;
+  var animal = (topicName||'the animal');
+  var extra = '';
+  if(kind==='no')   extra = ' The child did not like that one. Cheerfully say something like "okay!" and tell a completely DIFFERENT, brand-new fun thing about ' + animal + '.';
+  if(kind==='next') extra = ' Tell a completely DIFFERENT, brand-new fun thing about ' + animal + ' — not the same fact as before.';
+  if(currentDanger) extra += ' Remember to gently remind the child, in a calm happy way, that we only look and never touch this one, and tell a grown-up if we see it.';
+  var prompt = said + "  (Keep talking about " + animal
+    + " in " + T[lang].langName + ", tiny and playful for a 3 year old, and ask me a little question back." + extra + ")";
+  callJarvis(prompt);
+}
+
+/* ---------------- microphone: hands-free "Hey Jarvis" ---------------- */
+var recog = null;          // the speech recognition engine
+var listening = false;     // are we actively listening right now?
+var micOn = false;         // has the parent turned the always-listening mode ON?
+var awake = false;         // is Jarvis currently "awake" and answering?
+var jarvisSpeaking = false; // true while Jarvis is talking — mic must NOT listen to his own voice
+var muteUntil = 0;          // ignore anything heard until this time (covers the echo tail)
+// iPad/iPhone/Safari can't do reliable continuous "Hey Jarvis" listening,
+// so we use tap-to-talk there. Desktop Chrome/Edge keep the hands-free mode.
+var USE_TAPTALK = (function(){
+  var ua = navigator.userAgent || '';
+  var iDevice = /iPad|iPhone|iPod/.test(ua);
+  var iPadOS = (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var isSafari = /^((?!chrome|android|crios|fxios|edg|opr).)*safari/i.test(ua);
+  return iDevice || iPadOS || isSafari;
+})();
+var restartTimer = null;
+
+// words that WAKE Jarvis up (open ears / start a chat)
+var WAKE_WORDS = [
+  'hey jarvis','hi jarvis','jarvis wake up','wake up jarvis',
+  'good morning jarvis','good afternoon jarvis','good evening jarvis',
+  'morning jarvis','wake up','good morning','good afternoon','good evening','jarvis'
+];
+// words that put Jarvis to SLEEP (stop listening)
+var SLEEP_WORDS = [
+  'bye jarvis','bye bye jarvis','goodbye jarvis','good night',
+  'goodnight','go to sleep','see you tomorrow','stop'
+];
+
+function textHasAny(text, list){
+  text = ' ' + text.toLowerCase().replace(/[.,!?]/g,'') + ' ';
+  for(var i=0;i<list.length;i++){
+    if(text.indexOf(list[i])!==-1) return list[i];
+  }
+  return null;
+}
+// remove the wake word from the front so the rest can be a real question
+function stripWake(text, hit){
+  return text.toLowerCase().replace(hit,'').replace(/[.,!?]/g,'').trim();
+}
+
+function setMicVisual(){
+  // keep BOTH mic buttons in sync: main page bar + big-view pill
+  var btns=[ {b:'micBtn', l:'micLbl'}, {b:'bigMic', l:'bigMicLbl'} ];
+  for(var i=0;i<btns.length;i++){
+    var m=document.getElementById(btns[i].b);
+    if(!m) continue;
+    var lbl=document.getElementById(btns[i].l);
+    m.classList.remove('live','off','ready');
+    if(USE_TAPTALK){
+      // tap-to-talk: green when listening, otherwise a ready "tap to talk" state
+      if(listening){ m.classList.add('ready','live'); if(lbl) lbl.textContent=T[lang].listening; }
+      else{ m.classList.add('ready'); if(lbl) lbl.textContent=T[lang].talktap; }
+    }else{
+      // hands-free: GREEN = on/listening, RED = off
+      if(micOn){
+        m.classList.add('ready');
+        if(lbl) lbl.textContent = T[lang].talk;
+        if(listening) m.classList.add('live');
+      }else{
+        m.classList.add('off');
+        if(lbl) lbl.textContent = T[lang].tapwake;
+      }
+    }
+  }
+}
+
+// Parent/child taps the bar.
+function micTap(){
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR){ flashHint(T[lang].nomic); return; }
+  if(USE_TAPTALK){ pushToTalk(); return; }            // iPad/iPhone: one tap = one phrase
+  if(micOn){ turnMicOff(); } else { turnMicOn(); } // computer: toggle hands-free
+}
+
+// iOS tap-to-talk: listen for a single phrase (must start inside the tap gesture)
+function pushToTalk(){
+  if(listening){ try{ if(recog) recog.stop(); }catch(e){} return; }  // tap again to cancel
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR){ showDiag('This browser has no SpeechRecognition. Use Safari (not a Home-Screen app) or Chrome.'); flashHint(T[lang].nomic); return; }
+  awake = true;                       // a tap means "I want to talk now"
+  muteUntil = 0;                      // deliberate tap: never ignore the child
+  if(jarvisSpeaking){ try{ window.speechSynthesis.cancel(); }catch(e){} jarvisSpeaking=false; }
+  var heardSomething = false;
+  try{
+    recog = new SR();
+    recog.lang = (lang==='th') ? 'th-TH' : 'en-US';
+    recog.interimResults = false;
+    recog.continuous = false;         // iOS: one phrase per session
+    recog.maxAlternatives = 1;
+    recog.onstart = function(){ listening=true; setState('listening'); setMicVisual(); };
+    recog.onresult = function(e){
+      var said='';
+      for(var i=0;i<e.results.length;i++){ if(e.results[i].isFinal) said += e.results[i][0].transcript + ' '; }
+      said = said.trim();
+      if(said){ heardSomething=true; showDiag('Heard: "'+said+'"'); handleHeard(said); }
+    };
+    recog.onerror = function(ev){
+      var er = ev && ev.error ? ev.error : 'unknown';
+      if(er==='not-allowed' || er==='service-not-allowed'){
+        showDiag('Mic blocked ('+er+'). Allow the microphone in Safari settings. (Voice does NOT work in a Home-Screen / saved app — open in Safari itself.)');
+        flashHint(T[lang].micdenied);
+      } else if(er==='no-speech'){
+        showDiag('No speech heard. Tap, wait 1 second, then speak close to the iPad.');
+      } else if(er==='language-not-supported'){
+        showDiag('Language '+recog.lang+' not supported for voice on this device. Try switching the EN/ไทย toggle.');
+      } else {
+        showDiag('Mic error: '+er+' (listening in '+recog.lang+')');
+      }
+    };
+    recog.onend = function(){
+      listening=false; recog=null; setMicVisual();
+      if(!heardSomething) showDiag('Stopped listening, caught no words ('+(lang==='th'?'th-TH':'en-US')+'). Tap, wait a moment, then speak.');
+    };
+    recog.start();
+  }catch(e){ listening=false; setMicVisual(); showDiag('Could not start the mic: '+String(e&&e.message?e.message:e)); }
+}
+
+function turnMicOn(){
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR){ flashHint(T[lang].nomic); return; }
+  micOn = true;
+  setMicVisual();
+  flashHint(T[lang].sayhey);
+  startRecog();
+}
+
+function turnMicOff(){
+  micOn = false; awake = false;
+  if(restartTimer){ clearTimeout(restartTimer); restartTimer=null; }
+  try{ if(recog){ recog.onend=null; recog.stop(); } }catch(e){}
+  recog=null; listening=false;
+  setMicVisual();
+  if(!busy && convo.length===0) showIdle();
+}
+
+// Stop the always-on mic from hearing Jarvis's OWN voice (prevents the talk-forever loop)
+function pauseListening(){
+  if(restartTimer){ clearTimeout(restartTimer); restartTimer=null; }
+  try{ if(recog){ recog.onend=null; recog.stop(); } }catch(e){}
+  recog=null; listening=false; setMicVisual();
+}
+function resumeListening(){
+  // only the hands-free (desktop) mode auto-listens; tap-to-talk waits for a tap
+  if(micOn && !USE_TAPTALK && !jarvisSpeaking){
+    if(restartTimer) clearTimeout(restartTimer);
+    restartTimer = setTimeout(startRecog, 300);
+  }
+}
+
+function startRecog(){
+  if(!micOn) return;
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR){ return; }
+  try{
+    recog = new SR();
+    recog.lang = (lang==='th') ? 'th-TH' : 'en-US';
+    recog.interimResults = false;
+    recog.continuous = true;       // keep listening; we restart if the browser cuts it
+    recog.maxAlternatives = 1;
+
+    recog.onstart = function(){
+      listening = true;
+      setState('listening');
+      setMicVisual();
+    };
+    recog.onresult = function(e){
+      var said='';
+      for(var i=e.resultIndex;i<e.results.length;i++){
+        if(e.results[i].isFinal) said += e.results[i][0].transcript + ' ';
+      }
+      said = said.trim();
+      if(!said) return;
+      showDiag('Heard: "'+said+'"');
+      handleHeard(said);
+    };
+    recog.onerror = function(ev){
+      var er = ev && ev.error ? ev.error : 'unknown';
+      if(er==='not-allowed' || er==='service-not-allowed'){
+        showDiag('Mic blocked ('+er+'). Allow the microphone for this site.');
+        flashHint(T[lang].micdenied);
+        turnMicOff();
+      } else if(er!=='no-speech' && er!=='aborted'){
+        showDiag('Mic: '+er+' (listening in '+recog.lang+')');
+      }
+      // no-speech / aborted: let onend restart us
+    };
+    recog.onend = function(){
+      listening=false;
+      setMicVisual();
+      // the browser stops listening after silence — wake it back up if still ON
+      if(micOn){
+        if(restartTimer) clearTimeout(restartTimer);
+        restartTimer = setTimeout(startRecog, 350);
+      }
+    };
+    recog.start();
+  }catch(e){
+    // some browsers throw if start() is called too fast; retry shortly
+    if(micOn){ if(restartTimer) clearTimeout(restartTimer); restartTimer=setTimeout(startRecog,500); }
+  }
+}
+
+// Spoken words that send Jarvis back to the home (category) screen
+var HOME_WORDS = ['go home','home','main menu','start over','go back home','all animals',
+  'หน้าหลัก','หน้าแรก','กลับบ้าน','กลับหน้าแรก','เมนูหลัก','กลับไปหน้าแรก'];
+function matchHome(t){
+  t = ' ' + t.toLowerCase().replace(/[.,!?]/g,'') + ' ';
+  for(var i=0;i<HOME_WORDS.length;i++){
+    var w=HOME_WORDS[i];
+    // English words need spaces around them; Thai has no spaces so match anywhere
+    if(/[a-z]/.test(w)){ if(t.indexOf(' '+w+' ')!==-1) return true; }
+    else { if(t.indexOf(w)!==-1) return true; }
+  }
+  return false;
+}
+function goHome(){
+  stopJarvis();
+  closeBig();      // leave the big creature view if open
+  showHome();      // back to the category buttons
+  sayFiller(lang==='th' ? 'ไปหน้าแรกกัน!' : 'Back home!');
+}
+
+// Spoken words that act exactly like tapping a colored reply button
+var REPLY_WORDS = {
+  yes:  ['yes','yeah','yep','yay','ใช่','ชอบ','เอา'],
+  no:   ['no','nope','ไม่','ไม่ชอบ','ไม่เอา'],
+  more: ['more','again','more please','อีก','เล่าอีก','เอาอีก'],
+  next: ['next','another','ต่อไป','ถัดไป','อันอื่น','อื่น'],
+  why:  ['why','how come','ทำไม','เพราะอะไร'],
+  wow:  ['wow','cool','awesome','ว้าว','เจ๋ง','สุดยอด']
+};
+function matchReply(t){
+  t = ' ' + t.toLowerCase().replace(/[.,!?]/g,'') + ' ';
+  for(var kind in REPLY_WORDS){
+    var arr=REPLY_WORDS[kind];
+    for(var i=0;i<arr.length;i++){ if(t.indexOf(' '+arr[i]+' ')!==-1) return kind; }
+  }
+  return null;
+}
+// Spoken animal names that open that animal (built from the ANIMALS registry + a few nicknames)
+var ANIMAL_SAY = {};
+(function(){
+  var syn = {
+    monster:['octopus','squid','kraken','ปลาหมึก','หมึก'],
+    seahorse:['seal','sea lion','สิงโตทะเล'],
+    dino:['dinosaur','t rex','ไดโน'],
+    crocodile:['croc','alligator'],
+    jellyfish:['jelly']
+  };
+  for(var k in ANIMALS){
+    var a=ANIMALS[k]; var words=[k];
+    if(a.th) words.push(a.th);
+    if(a.en){ words.push(a.en.toLowerCase()); words.push(a.en.toLowerCase().replace(/s$/,'')); }
+    if(syn[k]) words=words.concat(syn[k]);
+    ANIMAL_SAY[k]=words;
+  }
+})();
+function matchAnimal(t){
+  t = ' ' + t.toLowerCase().replace(/[.,!?]/g,'') + ' ';
+  for(var k in ANIMAL_SAY){
+    var arr=ANIMAL_SAY[k];
+    for(var i=0;i<arr.length;i++){
+      var w=(''+arr[i]).toLowerCase().trim(); if(!w) continue;
+      if(t.indexOf(w)!==-1) return k;
+    }
+  }
+  return null;
+}
+// Route a spoken phrase: home -> reply button -> animal -> free question
+function routeSpeech(said){
+  if(matchHome(said)){ goHome(); return; }        // "go home", "หน้าแรก"
+  var rk = matchReply(said);
+  if(rk && convo.length){ reply(rk); return; }   // "yes", "more", "ทำไม" etc.
+  var ak = matchAnimal(said);
+  if(ak){ askAnimal(ak); return; }                // "shark", "หมา", "elephant" etc.
+  askHeard(said);                                 // anything else -> ask Jarvis
+}
+
+// Decide what to do with whatever the child said.
+function handleHeard(said){
+  if(jarvisSpeaking || Date.now() < muteUntil) return;   // ignore Jarvis's own voice + its echo tail
+  // 1) sleep words always win — Jarvis says bye and turns off
+  var sleepHit = textHasAny(said, SLEEP_WORDS);
+  if(sleepHit){
+    sayFiller(T[lang].bye);
+    awake=false;
+    turnMicOff();
+    showAnswer(T[lang].sleeptext);
+    return;
+  }
+  // 2) wake words — Jarvis wakes up (and acts on the rest of the sentence if any)
+  var wakeHit = textHasAny(said, WAKE_WORDS);
+  if(wakeHit){
+    awake = true;
+    var rest = stripWake(said, wakeHit);
+    if(rest.length>1){
+      routeSpeech(rest);          // "Hey Jarvis, sharks" / "Jarvis, more"
+    }else{
+      sayFiller(T[lang].hi);      // they just said "Hey Jarvis"
+      showAnswer(T[lang].awaketext);
+    }
+    return;
+  }
+  // 3) no wake/sleep word: only act if already awake
+  if(awake){
+    routeSpeech(said);
+  }
+  // if asleep and no wake word, we quietly ignore (kids chatting in the room)
+}
+
+// Send a real spoken question to Jarvis
+function askHeard(said){
+  var prompt = said + "  (A little child said this out loud. Answer in " + T[lang].langName
+    + ", tiny and playful for a 3 year old, and ask a little question back.)";
+  callJarvis(said.length ? prompt : (T[lang].hi));
+}
+
+function flashHint(msg){
+  var h=document.getElementById('hint'); h.textContent=msg;
+  setTimeout(function(){ if(h.textContent===msg) h.textContent=''; }, 4000);
+}
+// Parent-facing: show the real server error (stays ~25s, tap to dismiss)
+function showDiag(msg){
+  var d=document.getElementById('diag'); if(!d) return;
+  d.textContent='🔧 '+msg+'  —  (tap to close)';
+  d.style.display='block';
+  if(d._t) clearTimeout(d._t);
+  d._t=setTimeout(function(){ d.style.display='none'; }, 25000);
+}
+
+/* ---------------- start ---------------- */
+renderAvatar('robot');
+showHome();        // show the learning-category buttons first
+setLang('en');
+setMicVisual();   // start with the bar RED (mic off) until a parent taps it
+</script><div id="diag" class="diag" onclick="this.style.display='none'"></div>
+
+</body>
+</html>

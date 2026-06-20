@@ -1,0 +1,9 @@
+# Netlify configuration for Jarvis Jr.
+# Static site (index.html) + one serverless function (the secure Jarvis brain).
+
+[build]
+  publish = "."
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
