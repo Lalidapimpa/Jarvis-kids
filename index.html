@@ -101,6 +101,14 @@
   .addrow input{flex:1;margin-bottom:0;}
   .addbtn{font-family:'Fredoka';font-weight:700;font-size:15px;border:none;border-radius:14px;background:#5fd0a8;color:#04342c;padding:0 16px;cursor:pointer;box-shadow:0 4px 0 #3fa985;}
   .gear{background:rgba(255,255,255,.14);border:none;color:#bfe6ff;font-size:17px;border-radius:50%;width:36px;height:36px;cursor:pointer;margin-left:8px;}
+  #app.night{background:radial-gradient(120% 80% at 50% -10%, #16234a 0%, #0a1430 45%, #050a1c 100%);}
+  #app.night .ray{opacity:.12;} #app.night .bubble{opacity:.22;}
+  #app.night .speech{background:rgba(228,236,255,.93);}
+  .star{position:absolute;width:3px;height:3px;border-radius:50%;background:#fff;opacity:0;pointer-events:none;}
+  #app.night .star{animation:twinkle 3s ease-in-out infinite;}
+  @keyframes twinkle{0%,100%{opacity:.12;}50%{opacity:.95;}}
+  .setrow{margin-bottom:12px;}
+  .settoggle{font-family:'Fredoka';font-weight:600;font-size:15px;border:2px solid #cfe0f2;border-radius:14px;background:#fff;color:#0c2747;padding:10px 14px;width:100%;cursor:pointer;box-shadow:none;}
 
   @media (max-height:680px){
     .jarvis{width:min(40vmin,170px);height:min(40vmin,170px);}
@@ -123,6 +131,7 @@
         <button id="thBtn" class="on" onclick="setLang('th')">ไทย</button>
         <button id="enBtn" onclick="setLang('en')">EN</button>
       </div>
+      <button class="gear" onclick="toggleNight()" aria-label="bedtime">🌙</button>
       <button class="gear" onclick="openKids()" aria-label="settings">⚙️</button>
     </div>
   </div>
@@ -162,6 +171,7 @@
         <input id="nmInput" maxlength="20" placeholder="พิมพ์ชื่อ..." onkeydown="if(event.key==='Enter')addKid()" />
         <button class="addbtn" onclick="addKid()" id="nmAdd">+ เพิ่ม</button>
       </div>
+      <div class="setrow"><button class="settoggle" id="sndBtn" onclick="toggleSound()">🔊 เสียงประกอบ: เปิด</button></div>
       <button onclick="doneKids()" id="nmBtn">เริ่มเล่น!</button>
     </div>
   </div>
@@ -582,6 +592,7 @@ var T = {
 var lang='th', kids=[], nameTurn=0, greeted=false, busy=false, reqId=0, convo=[];
 var CALL_TH=[' ดูสิ! ',' นี่จ้ะ! ',' ว้าว! ',' '];
 var CALL_EN=[', look! ',', check it out! ',', wow! ',', '];
+var nightMode=false, soundOn=true, audioCtx=null;
 var current=null;   // {key, kind:'art'|'emoji', topic, danger}
 var ART_KEYS = Object.keys(ANIMALS);
 function $(id){return document.getElementById(id);}
@@ -606,14 +617,16 @@ function matchReply(t){ var raw=t.toLowerCase().replace(/[.,!?]/g,''); var p=' '
 /* ============ speech (lively voice) + anti-feedback-loop ============ */
 var jarvisSpeaking=false, muteUntil=0, speakWatchdog=null, curUtter=null;
 function setTalking(on){ var c=$('creature'); if(c) c.classList.toggle('talking',!!on); }
-function speak(text){
+function speak(text,calm){
   try{
     if(!('speechSynthesis' in window)){ busy=false; return; }
     window.speechSynthesis.cancel();
     var u=new SpeechSynthesisUtterance(text);
+    var soft = calm || nightMode;
     u.lang=(lang==='th')?'th-TH':'en-US';
-    u.rate=(lang==='th'?1.0:1.05)+(Math.random()*0.08-0.04);
-    u.pitch=1.32+(Math.random()*0.22-0.11);
+    u.rate= soft ? 0.85 : ((lang==='th'?1.0:1.05)+(Math.random()*0.08-0.04));
+    u.pitch= soft ? 1.0 : (1.32+(Math.random()*0.22-0.11));
+    u.volume= soft ? 0.75 : 1.0;
     var vs=window.speechSynthesis.getVoices()||[];
     var want=vs.filter(function(v){return v.lang&&v.lang.toLowerCase().indexOf(lang==='th'?'th':'en')===0;});
     if(want.length){ var nice=want.find(function(v){return /kanya|google|samantha|nicky|aaron/i.test(v.name);}); u.voice=nice||want[0]; }
@@ -638,7 +651,7 @@ function renderVisual(kind,key,emoji){
   var c=$('creature'); c.classList.remove('show'); 
   if(kind==='art'){ c.innerHTML='<svg class="art" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">'+AVATARS[key]+'</svg>'; }
   else{ c.innerHTML='<span class="bigemoji">'+emoji+'</span>'; }
-  void c.offsetWidth; c.classList.add('show');
+  void c.offsetWidth; c.classList.add('show'); sfxPop();
   $('jarvis').classList.add('buddy');
 }
 
@@ -687,13 +700,14 @@ function offline(){
 /* ============ buttons ============ */
 function onWhy(){ if(busy||!current) return; busy=true;
   callJarvis("Why? Answer in "+T[lang].langName+", one tiny sentence, max 10 words.", current.danger); }
-function onWow(){ var w=maybeName(pick(T[lang].wows),true); showSay(w); speak(w); confetti(); }
+function onWow(){ var w=maybeName(pick(T[lang].wows),true); showSay(w); speak(w); confetti(); sfxWow(); }
 function onNext(){ if(busy) return; var k=pick(ART_KEYS); summon(k,'art'); }
 function moreFact(){ if(busy||!current) return; busy=true;
   callJarvis("Tell another tiny fun fact about "+current.topic+", in "+T[lang].langName+", max 10 words.", current.danger); }
 
 /* ============ route what the child says ============ */
 function routeSpeech(said){
+  var cm=matchComfort(said); if(cm){ comfort(cm); return; }   // "I'm sad" / "miss mommy" / "scared"
   var a=matchAnimal(said); if(a){ summon(a.key,a.kind); return; }
   var r=matchReply(said);
   if(r==='next'){ onNext(); return; }
@@ -733,6 +747,7 @@ function startRecog(oneShot){
 }
 function setMic(){ $('mic').classList.toggle('on',micOn); $('hint').textContent = micOn?T[lang].listening:T[lang].tapHint; }
 function micClick(){
+  ac();
   if(!greeted){ greeted=true; var g=greetLine(); showSay(g); speak(g); }
   if(USE_TAPTALK){ micOn=true; setMic(); startRecog(true); return; }
   micOn=!micOn; setMic(); if(micOn) startRecog(false); else { try{ if(recog){recog.onend=null;recog.abort();} }catch(e){} }
@@ -782,11 +797,53 @@ function setLang(l){
   lang=l; document.documentElement.lang=l;
   $('thBtn').classList.toggle('on',l==='th'); $('enBtn').classList.toggle('on',l==='en');
   $('lWhy').textContent=T[l].why; $('lWow').textContent=T[l].wow; $('lNext').textContent=T[l].next;
-  $('nmTitle').textContent=T[l].nmTitle; $('nmSub').textContent=T[l].nmSub; $('nmInput').placeholder=T[l].nmPlace; $('nmBtn').textContent=T[l].nmBtn; $('nmAdd').textContent=T[l].nmAdd;
+  $('nmTitle').textContent=T[l].nmTitle; $('nmSub').textContent=T[l].nmSub; $('nmInput').placeholder=T[l].nmPlace; $('nmBtn').textContent=T[l].nmBtn; $('nmAdd').textContent=T[l].nmAdd; updateSndBtn();
   if(recog){ recog.lang=(l==='th')?'th-TH':'en-US'; }
   if(!current) showIdle();
   flashHint(micOn?T[l].listening:T[l].tapHint);
 }
+
+/* ============ gentle sound effects (synthesized, no files) ============ */
+function ac(){ if(!audioCtx){ try{ audioCtx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } 
+  if(audioCtx&&audioCtx.state==='suspended'){ try{audioCtx.resume();}catch(e){} } return audioCtx; }
+function blip(freq,dur,type,vol,when){ var c=audioCtx; if(!c||!soundOn) return; var t=c.currentTime+(when||0);
+  var o=c.createOscillator(), g=c.createGain(); o.type=type||'sine'; o.frequency.value=freq;
+  g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(vol||0.12,t+0.02); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+dur+0.03); }
+function sfxPop(){ ac(); if(nightMode){ blip(520,0.2,'sine',0.06); } else { blip(440,0.12,'triangle',0.11); blip(680,0.12,'triangle',0.09,0.06); } }
+function sfxWow(){ ac(); var n=[523,659,784,1047]; for(var i=0;i<n.length;i++) blip(n[i],0.16,'triangle',0.11,i*0.08); }
+
+/* ============ comfort / emotion ============ */
+var COMFORT={
+  miss:['miss mommy','miss mom','miss my mum','คิดถึงแม่','คิดถึงพ่อ','อยากเจอแม่','หาแม่','แม่อยู่ไหน'],
+  sad:['sad','unhappy','crying','i cry','เศร้า','เสียใจ','ร้องไห้','งอแง','ไม่มีความสุข','ไม่สบายใจ'],
+  scared:['scared','afraid','frightened','กลัว','น่ากลัว','ตกใจ'],
+  lonely:['lonely','alone','เหงา','อยู่คนเดียว']
+};
+var COMFORT_LINE={
+  th:{ miss:'แม่รักหนูมากๆ นะ ❤️ เดี๋ยวแม่ก็มาหา',
+       sad:'ไม่เป็นไรนะ ❤️ Jarvis อยู่ตรงนี้ ไปดูสัตว์น่ารักกันไหม?',
+       scared:'ไม่ต้องกลัวนะ ❤️ มี Jarvis อยู่ด้วย ปลอดภัยจ้ะ',
+       lonely:'มี Jarvis เป็นเพื่อนนะ ❤️ มาเล่นด้วยกัน!' },
+  en:{ miss:'Mommy loves you so much \u2764\ufe0f She\u2019ll be back soon.',
+       sad:'It\u2019s okay \u2764\ufe0f Jarvis is here. Want to see a cute animal?',
+       scared:'Don\u2019t be scared \u2764\ufe0f Jarvis is right here with you.',
+       lonely:'You\u2019ve got Jarvis as a friend \u2764\ufe0f Let\u2019s play together!' }
+};
+function matchComfort(t){ var raw=t.toLowerCase().replace(/[.,!?]/g,''); var p=' '+raw+' ';
+  for(var k in COMFORT){ for(var i=0;i<COMFORT[k].length;i++){ var w=COMFORT[k][i].toLowerCase();
+    if(/^[\x00-\x7F ]+$/.test(w)){ if(p.indexOf(' '+w+' ')!==-1) return k; } else { if(raw.indexOf(w)!==-1) return k; } } } return null; }
+function comfort(kind){ busy=false; var line=COMFORT_LINE[lang][kind]||COMFORT_LINE[lang].sad;
+  var s=maybeName(line,true); showSay(s); speak(s,true); }
+
+/* ============ bedtime + sound toggles ============ */
+function toggleNight(){ ac(); nightMode=!nightMode; $('app').classList.toggle('night',nightMode);
+  var line = nightMode ? (lang==='th'?'ชู่ว์… ได้เวลานอนแล้ว มานอนสบายๆ กันนะ':'Shhh\u2026 it\u2019s bedtime. Let\u2019s get cozy.')
+                       : (lang==='th'?'อรุณสวัสดิ์! มาเล่นกันต่อ!':'Good morning! Let\u2019s keep playing!');
+  var s=maybeName(line,true); showSay(s); speak(s,true); }
+function toggleSound(){ soundOn=!soundOn; try{ localStorage.setItem('jarvisSound',soundOn?'1':'0'); }catch(e){} updateSndBtn(); if(soundOn){ ac(); blip(660,0.12,'triangle',0.1); } }
+function updateSndBtn(){ var b=$('sndBtn'); if(!b) return;
+  b.textContent=(lang==='th'?'🔊 เสียงประกอบ: ':'🔊 Sound: ')+(soundOn?(lang==='th'?'เปิด':'On'):(lang==='th'?'ปิด':'Off')); }
 
 /* ============ confetti ============ */
 function confetti(){ var cols=['#ffd24a','#ff9ec4','#5fd0a8','#9ec7ff','#ff8f7a'], host=$('app');
@@ -802,10 +859,14 @@ function showDiag(msg){ var d=$('diag'); d.textContent='🔧 '+msg+'  (tap to cl
 /* ============ bubbles ============ */
 (function(){ var host=$('app'); for(var b=0;b<16;b++){ var s=6+Math.random()*16, el=document.createElement('div'); el.className='bubble';
   el.style.width=s+'px'; el.style.height=s+'px'; el.style.left=(Math.random()*100)+'%';
-  el.style.animationDuration=(7+Math.random()*8)+'s'; el.style.animationDelay=(-Math.random()*10)+'s'; host.appendChild(el); } })();
+  el.style.animationDuration=(7+Math.random()*8)+'s'; el.style.animationDelay=(-Math.random()*10)+'s'; host.appendChild(el); }
+  for(var s2=0;s2<18;s2++){ var st=document.createElement('div'); st.className='star';
+    st.style.left=(Math.random()*100)+'%'; st.style.top=(Math.random()*60)+'%';
+    st.style.animationDelay=(-Math.random()*3)+'s'; host.appendChild(st); } })();
 
 /* ============ init ============ */
 $('mic').addEventListener('click',micClick);
+try{ soundOn = localStorage.getItem('jarvisSound')!=='0'; }catch(e){}
 kids=loadKids();
 setLang('th');
 showIdle();
