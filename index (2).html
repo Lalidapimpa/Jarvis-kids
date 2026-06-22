@@ -1,0 +1,817 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Jarvis Jr.</title>
+<link rel="apple-touch-icon" href="apple-touch-icon.png" />
+<link rel="icon" type="image/png" href="apple-touch-icon.png" />
+<meta name="apple-mobile-web-app-title" content="Jarvis Jr." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{font-family:'Nunito',sans-serif;overflow:hidden;background:#04122e;}
+  #app{position:fixed;inset:0;display:flex;flex-direction:column;
+    background:radial-gradient(120% 80% at 50% -10%, #1a4f9e 0%, #0d2d6e 45%, #071a3f 100%);}
+  .ray{position:absolute;top:-10%;width:120px;height:130%;background:linear-gradient(180deg,rgba(120,200,255,.16),rgba(120,200,255,0));transform:rotate(8deg);filter:blur(10px);animation:sway 9s ease-in-out infinite;pointer-events:none;}
+  .ray.r2{left:40%;animation-delay:-3s;opacity:.7;} .ray.r3{left:72%;animation-delay:-6s;opacity:.5;}
+  @keyframes sway{0%,100%{transform:rotate(8deg) translateX(0);}50%{transform:rotate(8deg) translateX(22px);}}
+  .bubble{position:absolute;bottom:-40px;border-radius:50%;pointer-events:none;background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.8),rgba(255,255,255,.16) 60%,rgba(255,255,255,0));animation:rise linear infinite;}
+  @keyframes rise{0%{transform:translateY(0) scale(.8);opacity:0;}10%{opacity:.7;}100%{transform:translateY(-115vh) scale(1.1);opacity:0;}}
+
+  .top{position:relative;z-index:5;display:flex;align-items:center;justify-content:space-between;padding:16px 18px 4px;}
+  .logo{font-family:'Fredoka';font-weight:700;color:#bfe6ff;font-size:18px;display:flex;align-items:center;gap:8px;}
+  .dot{width:9px;height:9px;border-radius:50%;background:#5fd0a8;box-shadow:0 0 10px #5fd0a8;}
+  .lang{display:flex;background:rgba(255,255,255,.12);border-radius:22px;overflow:hidden;}
+  .lang button{font-family:'Fredoka';font-weight:600;font-size:14px;border:none;background:transparent;color:#bfe6ff;padding:7px 16px;cursor:pointer;}
+  .lang button.on{background:#4ac4e6;color:#04243a;}
+
+  .stage{position:relative;z-index:2;flex:1;display:flex;align-items:center;justify-content:center;min-height:0;}
+  .jarvis{width:min(52vmin,220px);height:min(52vmin,220px);transition:all .5s ease;will-change:transform;animation:bob 3.8s ease-in-out infinite;}
+  .jarvis.buddy{position:absolute;left:16px;bottom:8px;width:78px;height:78px;}
+  @keyframes bob{0%,100%{transform:translateY(0) rotate(-1.5deg);}50%{transform:translateY(-12px) rotate(1.5deg);}}
+  .jPupil{transform-origin:center;animation:blink 4.6s infinite;}
+  @keyframes blink{0%,92%,100%{transform:scaleY(1);}95%{transform:scaleY(.1);}}
+
+  .creature{position:absolute;width:min(74vw,330px);height:min(74vw,330px);opacity:0;transform:translateX(70px) scale(.7);
+    transition:opacity .45s ease, transform .6s cubic-bezier(.2,1.3,.4,1);display:flex;align-items:center;justify-content:center;}
+  .creature.show{opacity:1;transform:translateX(0) scale(1);}
+  .creature.show .art{animation:bob 3.3s ease-in-out infinite;}
+  .art{width:100%;height:100%;}
+  .bigemoji{font-size:min(46vw,210px);line-height:1;filter:drop-shadow(0 16px 26px rgba(0,0,0,.4));}
+  .creature.show .bigemoji{animation:bob 3.3s ease-in-out infinite;}
+  .talking .mouth{animation:talk .26s ease-in-out infinite alternate;transform-origin:center;}
+  @keyframes talk{from{transform:scaleY(.45);}to{transform:scaleY(1.15);}}
+  .wagL,.wagFast{transform-box:fill-box;transform-origin:left center;animation:wag 1.1s ease-in-out infinite;}
+  .wagFast{animation-duration:.7s;}
+  @keyframes wag{0%,100%{transform:rotate(-9deg);}50%{transform:rotate(11deg);}}
+
+  .speech{position:relative;z-index:4;margin:0 16px;background:rgba(255,255,255,.97);color:#0c2747;border-radius:24px;
+    padding:16px 18px;min-height:64px;max-height:30vh;overflow-y:auto;display:flex;align-items:center;justify-content:center;text-align:center;
+    box-shadow:0 12px 30px rgba(2,16,40,.45);}
+  .speech::before{content:"";position:absolute;top:-13px;left:50%;transform:translateX(-50%);border-left:13px solid transparent;border-right:13px solid transparent;border-bottom:15px solid rgba(255,255,255,.97);}
+  .speech p{font-family:'Fredoka';font-weight:600;font-size:20px;line-height:1.35;}
+  .speech.idle p{color:#5b7da6;}
+  .dots span{display:inline-block;width:9px;height:9px;margin:0 3px;border-radius:50%;background:#7fb6e6;animation:dot 1s infinite;}
+  .dots span:nth-child(2){animation-delay:.2s;} .dots span:nth-child(3){animation-delay:.4s;}
+  @keyframes dot{0%,100%{transform:translateY(0);opacity:.5;}50%{transform:translateY(-7px);opacity:1;}}
+
+  .micwrap{z-index:4;display:flex;justify-content:center;padding:16px 0 4px;}
+  .mic{width:94px;height:94px;border:none;border-radius:50%;cursor:pointer;color:#04122e;font-size:38px;
+    background:radial-gradient(circle at 38% 30%,#ffe79a,#ffd24a 55%,#f3a93a);
+    box-shadow:0 10px 0 #c9892b,0 0 0 10px rgba(255,210,74,.16),inset 0 4px 4px rgba(255,255,255,.6);
+    transition:transform .1s ease;}
+  .mic:active{transform:translateY(7px);}
+  .mic.on{animation:micpulse 1.6s ease-in-out infinite;box-shadow:0 10px 0 #c9892b,0 0 0 14px rgba(95,208,168,.25),inset 0 4px 4px rgba(255,255,255,.6);}
+  @keyframes micpulse{0%,100%{box-shadow:0 10px 0 #c9892b,0 0 0 12px rgba(95,208,168,.22),inset 0 4px 4px rgba(255,255,255,.6);}50%{box-shadow:0 10px 0 #c9892b,0 0 0 22px rgba(95,208,168,.05),inset 0 4px 4px rgba(255,255,255,.6);}}
+  .hint{z-index:4;text-align:center;font-family:'Fredoka';font-weight:500;color:#bfe6ff;font-size:14px;padding:2px 16px 8px;min-height:22px;}
+
+  .row{z-index:4;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:2px 16px calc(16px + env(safe-area-inset-bottom));}
+  .b{font-family:'Fredoka';font-weight:700;font-size:17px;border:none;border-radius:26px;padding:15px 6px 13px;cursor:pointer;color:#062033;
+    display:flex;flex-direction:column;align-items:center;gap:4px;line-height:1.1;
+    background-image:linear-gradient(180deg,rgba(255,255,255,.5),rgba(255,255,255,0) 45%,rgba(0,0,0,.16));
+    box-shadow:0 8px 0 rgba(0,0,0,.22),inset 0 3px 2px rgba(255,255,255,.6);transition:transform .1s ease;}
+  .b:active{transform:translateY(6px);box-shadow:0 2px 0 rgba(0,0,0,.22),inset 0 3px 2px rgba(255,255,255,.5);}
+  .b .e{font-size:30px;line-height:1;}
+  .b.why{background-color:#ffd24a;} .b.wow{background-color:#ff9ec4;} .b.next{background-color:#9ec7ff;}
+
+  .confetti{position:absolute;z-index:9;width:11px;height:15px;border-radius:2px;top:38%;pointer-events:none;}
+
+  .diag{position:fixed;left:0;right:0;bottom:0;z-index:30;background:rgba(6,18,38,.95);color:#cfe6ff;
+    font-family:'Fredoka';font-size:12px;padding:8px 12px;display:none;cursor:pointer;border-top:1px solid rgba(120,180,255,.3);}
+  .diag.show{display:block;}
+
+  .modal{position:fixed;inset:0;z-index:40;background:rgba(4,14,34,.86);display:none;align-items:center;justify-content:center;padding:24px;}
+  .modal.show{display:flex;}
+  .card{background:#fff;border-radius:26px;padding:26px 22px;max-width:340px;width:100%;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.5);}
+  .card h2{font-family:'Fredoka';font-weight:700;color:#0c2747;font-size:22px;margin-bottom:6px;}
+  .card p{font-family:'Fredoka';font-weight:500;color:#5b7da6;font-size:15px;margin-bottom:16px;}
+  .card input{width:100%;font-family:'Fredoka';font-size:20px;text-align:center;padding:12px;border:2px solid #cfe0f2;border-radius:16px;color:#0c2747;margin-bottom:14px;}
+  .card button{font-family:'Fredoka';font-weight:700;font-size:18px;border:none;border-radius:18px;padding:13px 26px;cursor:pointer;color:#04243a;background:#4ac4e6;box-shadow:0 6px 0 #2f9bbd;}
+  #kidList{display:flex;flex-direction:column;gap:8px;margin-bottom:12px;}
+  .kid{display:flex;align-items:center;gap:10px;background:#eef5fc;border-radius:14px;padding:8px 10px;}
+  .kid .tick{width:32px;height:32px;border-radius:50%;border:2px solid #4ac4e6;background:#fff;color:#4ac4e6;font-weight:800;font-size:16px;cursor:pointer;flex:0 0 auto;box-shadow:none;padding:0;}
+  .kid.here .tick{background:#4ac4e6;color:#fff;}
+  .kid.away{opacity:.5;}
+  .kid .nm{flex:1;text-align:left;font-family:'Fredoka';font-weight:600;color:#0c2747;font-size:17px;}
+  .kid .del{border:none;background:transparent;color:#d4537e;cursor:pointer;font-size:18px;box-shadow:none;padding:4px 8px;}
+  .addrow{display:flex;gap:8px;margin-bottom:14px;}
+  .addrow input{flex:1;margin-bottom:0;}
+  .addbtn{font-family:'Fredoka';font-weight:700;font-size:15px;border:none;border-radius:14px;background:#5fd0a8;color:#04342c;padding:0 16px;cursor:pointer;box-shadow:0 4px 0 #3fa985;}
+  .gear{background:rgba(255,255,255,.14);border:none;color:#bfe6ff;font-size:17px;border-radius:50%;width:36px;height:36px;cursor:pointer;margin-left:8px;}
+
+  @media (max-height:680px){
+    .jarvis{width:min(40vmin,170px);height:min(40vmin,170px);}
+    .creature{width:min(56vw,250px);height:min(56vw,250px);}
+    .bigemoji{font-size:min(36vw,160px);}
+    .mic{width:80px;height:80px;font-size:32px;}
+    .speech p{font-size:18px;}
+  }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="ray"></div><div class="ray r2"></div><div class="ray r3"></div>
+
+  <div class="top">
+    <div class="logo"><span class="dot"></span> Jarvis Jr.</div>
+    <div style="display:flex;align-items:center;">
+      <div class="lang">
+        <button id="thBtn" class="on" onclick="setLang('th')">ไทย</button>
+        <button id="enBtn" onclick="setLang('en')">EN</button>
+      </div>
+      <button class="gear" onclick="openKids()" aria-label="settings">⚙️</button>
+    </div>
+  </div>
+
+  <div class="stage">
+    <svg class="jarvis" id="jarvis" viewBox="0 0 240 240">
+      <line x1="120" y1="58" x2="120" y2="30" stroke="#7fdcec" stroke-width="7"/><circle cx="120" cy="24" r="11" fill="#ffd24a"/>
+      <rect x="58" y="62" width="124" height="128" rx="40" fill="#4ac4e6"/><rect x="68" y="72" width="104" height="108" rx="32" fill="#62d2f0"/>
+      <ellipse cx="44" cy="120" rx="14" ry="22" fill="#3aa9cd"/><ellipse cx="196" cy="120" rx="14" ry="22" fill="#3aa9cd"/>
+      <circle cx="98" cy="118" r="26" fill="#fff"/><circle cx="142" cy="118" r="26" fill="#fff"/>
+      <circle class="jPupil" cx="100" cy="122" r="12" fill="#0c2747"/><circle class="jPupil" cx="140" cy="122" r="12" fill="#0c2747"/>
+      <circle cx="104" cy="116" r="4" fill="#fff"/><circle cx="144" cy="116" r="4" fill="#fff"/>
+      <ellipse cx="78" cy="150" rx="13" ry="9" fill="#ff9ec4" opacity=".7"/><ellipse cx="162" cy="150" rx="13" ry="9" fill="#ff9ec4" opacity=".7"/>
+      <path d="M104 150 Q120 166 136 150" stroke="#0c2747" stroke-width="6" fill="none" stroke-linecap="round"/>
+    </svg>
+    <div class="creature" id="creature"></div>
+  </div>
+
+  <div class="speech idle" id="speech"><p id="say"></p></div>
+  <div class="micwrap"><button class="mic" id="mic" aria-label="Talk to Jarvis">🎤</button></div>
+  <div class="hint" id="hint"></div>
+
+  <div class="row">
+    <button class="b why" onclick="onWhy()"><span class="e">❓</span><span id="lWhy">Why?</span></button>
+    <button class="b wow" onclick="onWow()"><span class="e">😮</span><span id="lWow">Wow!</span></button>
+    <button class="b next" onclick="onNext()"><span class="e">➡️</span><span id="lNext">Next</span></button>
+  </div>
+
+  <div class="diag" id="diag" onclick="this.classList.remove('show')"></div>
+
+  <div class="modal" id="nameModal">
+    <div class="card">
+      <h2 id="nmTitle">ใครจะเล่นบ้าง?</h2>
+      <p id="nmSub">ใส่ชื่อลูกได้หลายคน แล้วติ๊กคนที่เล่นวันนี้</p>
+      <div id="kidList"></div>
+      <div class="addrow">
+        <input id="nmInput" maxlength="20" placeholder="พิมพ์ชื่อ..." onkeydown="if(event.key==='Enter')addKid()" />
+        <button class="addbtn" onclick="addKid()" id="nmAdd">+ เพิ่ม</button>
+      </div>
+      <button onclick="doneKids()" id="nmBtn">เริ่มเล่น!</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============ DATA reused from the original app (20 hand-drawn animals) ============ */
+var ANIMALS = {
+  shark:    {th:'ฉลาม', en:'Sharks', emoji:'🦈', topic:'sharks', fillTh:'ว้าว ฉลาม!', fillEn:'Ooo, sharks! Yay!'},
+  dino:     {th:'ไดโนเสาร์', en:'Dinos', emoji:'🦕', topic:'dinosaurs', fillTh:'เย้ ไดโนเสาร์!', fillEn:'Yay, dinosaurs!'},
+  fish:     {th:'ปลา', en:'Fish', emoji:'🐠', topic:'ocean fish and sea animals', fillTh:'ปลาว่ายน้ำ!', fillEn:'Splash! Fishies!'},
+  monster:  {th:'มอนสเตอร์', en:'Monsters', emoji:'🐙', topic:'friendly legendary sea creatures (like a giant squid, a gentle kraken, or the Loch Ness monster) — kept imaginative and never scary', fillTh:'ปลาหมึกน่ารัก!', fillEn:'Wiggly octopus!'},
+  whale:    {th:'วาฬ', en:'Whales', emoji:'🐋', topic:'whales (like the giant blue whale and the singing humpback whale)', fillTh:'วาฬตัวใหญ่!', fillEn:'A big whale!'},
+  turtle:   {th:'เต่า', en:'Turtles', emoji:'🐢', topic:'sea turtles and tortoises', fillTh:'เต่าน้อย!', fillEn:'Sweet little turtle!'},
+  crab:     {th:'ปู', en:'Crabs', emoji:'🦀', topic:'crabs and other funny crawly sea creatures', fillTh:'ปูหนีบ!', fillEn:'Snippy crab!'},
+  seahorse: {th:'แมวน้ำ', en:'Seals', emoji:'🦭', topic:'seals and sea lions', fillTh:'แมวน้ำน่ารัก!', fillEn:'Cute seal!'},
+
+  dog:      {th:'หมา', en:'Dogs', emoji:'🐶', topic:'dogs and puppies', fillTh:'หมาน้อย โฮ่ง!', fillEn:'Woof! A puppy!'},
+  cat:      {th:'แมว', en:'Cats', emoji:'🐱', topic:'cats and kittens', fillTh:'เหมียว แมวน้อย!', fillEn:'Meow! A kitty!'},
+  rabbit:   {th:'กระต่าย', en:'Bunnies', emoji:'🐰', topic:'pet rabbits and bunnies', fillTh:'กระต่ายน้อย!', fillEn:'A hoppy bunny!'},
+  bird:     {th:'นก', en:'Birds', emoji:'🐦', topic:'little pet birds', fillTh:'นกน้อยจิ๊บๆ!', fillEn:'Tweet! A birdie!'},
+  hamster:  {th:'แฮมสเตอร์', en:'Hamsters', emoji:'🐹', topic:'cute pet hamsters', fillTh:'แฮมสเตอร์จ้ำม่ำ!', fillEn:'A chubby hamster!'},
+
+  lion:     {th:'สิงโต', en:'Lions', emoji:'🦁', topic:'lions, the friendly king of the animals', fillTh:'สิงโตคำราม รรร!', fillEn:'Roar! A lion!'},
+  elephant: {th:'ช้าง', en:'Elephants', emoji:'🐘', topic:'elephants, the biggest land animal', fillTh:'ช้างตัวใหญ่ แปร๋น!', fillEn:'A big elephant!'},
+  monkey:   {th:'ลิง', en:'Monkeys', emoji:'🐵', topic:'monkeys', fillTh:'ลิงน้อยซน!', fillEn:'A silly monkey!'},
+
+  snake:    {th:'งู', en:'Snakes', emoji:'🐍', topic:'snakes', danger:true, fillTh:'งูเลื้อยยย!', fillEn:'A slithery snake!'},
+  jellyfish:{th:'แมงกะพรุน', en:'Jellyfish', emoji:'🪼', topic:'jellyfish', danger:true, fillTh:'แมงกะพรุนวุ้นๆ!', fillEn:'A wobbly jellyfish!'},
+  bee:      {th:'ผึ้ง', en:'Bees', emoji:'🐝', topic:'bees', danger:true, fillTh:'ผึ้งบินหึ่งๆ!', fillEn:'Buzz! A bee!'},
+  crocodile:{th:'จระเข้', en:'Crocodiles', emoji:'🐊', topic:'crocodiles', danger:true, fillTh:'จระเข้งับๆ!', fillEn:'A snappy crocodile!'}
+};
+
+var AVATARS = {
+  robot:
+    '<defs><radialGradient id="body" cx="40%" cy="32%" r="80%">'
+    + '<stop offset="0%" stop-color="#9af0ff"/><stop offset="55%" stop-color="#28c4e6"/>'
+    + '<stop offset="100%" stop-color="#1577c4"/></radialGradient></defs>'
+    + '<path class="wagL" d="M30 92 Q4 74 8 112 Q26 116 38 108 Z" fill="#1577c4"/>'
+    + '<path d="M170 92 Q196 74 192 112 Q174 116 162 108 Z" fill="#1577c4"/>'
+    + '<line x1="100" y1="40" x2="100" y2="20" stroke="#bdeeff" stroke-width="5" stroke-linecap="round"/>'
+    + '<circle cx="100" cy="16" r="8" fill="#ffd23f"/>'
+    + '<rect x="40" y="44" width="120" height="120" rx="40" fill="url(#body)"/>'
+    + '<rect x="40" y="44" width="120" height="120" rx="40" fill="none" stroke="#bdeeff" stroke-width="3" opacity=".5"/>'
+    + '<circle cx="78" cy="98" r="20" fill="#fff"/><circle cx="122" cy="98" r="20" fill="#fff"/>'
+    + '<circle cx="80" cy="100" r="9" fill="#0a2a44"/><circle cx="124" cy="100" r="9" fill="#0a2a44"/>'
+    + '<circle cx="76" cy="96" r="3" fill="#fff"/><circle cx="120" cy="96" r="3" fill="#fff"/>'
+    + '<circle cx="60" cy="124" r="8" fill="#ff8fa8" opacity=".75"/><circle cx="140" cy="124" r="8" fill="#ff8fa8" opacity=".75"/>'
+    + '<rect class="mouth" x="86" y="128" width="28" height="14" rx="7" fill="#0a2a44"/>',
+
+  shark:
+    '<path class="wagL" d="M150 100 Q184 78 188 58 Q191 96 188 122 Q172 112 150 106 Z" fill="#4a90c2"/>'
+    + '<path class="wig" d="M92 50 Q104 20 128 42 L118 64 Z" fill="#4a90c2"/>'
+    + '<path d="M70 152 Q54 178 86 166 Z" fill="#4a90c2"/>'
+    + '<ellipse cx="95" cy="106" rx="68" ry="56" fill="#5fb4e8"/>'
+    + '<ellipse cx="95" cy="126" rx="46" ry="28" fill="#eaf7ff" opacity=".85"/>'
+    + '<circle cx="78" cy="94" r="17" fill="#fff"/><circle cx="116" cy="94" r="17" fill="#fff"/>'
+    + '<circle cx="80" cy="96" r="8" fill="#0a2a44"/><circle cx="118" cy="96" r="8" fill="#0a2a44"/>'
+    + '<circle cx="77" cy="92" r="3" fill="#fff"/><circle cx="115" cy="92" r="3" fill="#fff"/>'
+    + '<circle cx="62" cy="118" r="7" fill="#ff8fa8" opacity=".7"/><circle cx="128" cy="118" r="7" fill="#ff8fa8" opacity=".7"/>'
+    + '<path class="mouth" d="M76 126 Q95 144 114 126 Q95 134 76 126 Z" fill="#0a2a44"/>'
+    + '<path d="M77.8 127.4 L79.8 132.4 L81.8 127.4 Z" fill="#fff"/>'
+    + '<path d="M82.7 128.8 L84.7 133.8 L86.7 128.8 Z" fill="#fff"/>'
+    + '<path d="M88.1 129.7 L90.1 134.7 L92.1 129.7 Z" fill="#fff"/>'
+    + '<path d="M93 130 L95 135 L97 130 Z" fill="#fff"/>'
+    + '<path d="M97.9 129.7 L99.9 134.7 L101.9 129.7 Z" fill="#fff"/>'
+    + '<path d="M103.3 128.8 L105.3 133.8 L107.3 128.8 Z" fill="#fff"/>'
+    + '<path d="M108.2 127.4 L110.2 132.4 L112.2 127.4 Z" fill="#fff"/>',
+
+  dino:
+    '<path class="wagL" d="M150 142 Q186 150 190 128 Q182 152 150 154 Z" fill="#4faa5e"/>'
+    + '<ellipse cx="112" cy="136" rx="54" ry="38" fill="#7bd88a"/>'
+    + '<rect x="84" y="160" width="16" height="22" rx="7" fill="#4faa5e"/>'
+    + '<rect x="124" y="160" width="16" height="22" rx="7" fill="#4faa5e"/>'
+    + '<path d="M92 104 l6 -13 6 13 Z" fill="#3f9c54"/><path d="M114 100 l6 -13 6 13 Z" fill="#3f9c54"/>'
+    + '<g class="neck">'
+    + '<path d="M72 142 Q40 112 56 70 L80 78 Q70 112 94 134 Z" fill="#7bd88a"/>'
+    + '<path d="M40 44 l5 -11 5 11 Z" fill="#3f9c54"/>'
+    + '<ellipse cx="54" cy="58" rx="27" ry="23" fill="#7bd88a"/>'
+    + '<circle cx="46" cy="52" r="11" fill="#fff"/><circle cx="66" cy="52" r="11" fill="#fff"/>'
+    + '<circle cx="47" cy="53" r="5" fill="#0a2a44"/><circle cx="67" cy="53" r="5" fill="#0a2a44"/>'
+    + '<circle cx="44" cy="50" r="2" fill="#fff"/><circle cx="64" cy="50" r="2" fill="#fff"/>'
+    + '<circle cx="38" cy="66" r="5" fill="#ff8fa8" opacity=".7"/>'
+    + '<ellipse class="mouth" cx="56" cy="70" rx="10" ry="4" fill="#0a2a44"/>'
+    + '</g>',
+
+  fish:
+    '<path class="wagL" d="M150 102 Q184 76 188 102 Q184 128 150 102 Z" fill="#ff8c2e"/>'
+    + '<path class="wig" d="M86 58 Q98 34 114 56 Z" fill="#ff8c2e"/>'
+    + '<path class="wig" d="M86 152 Q98 176 114 154 Z" fill="#ff8c2e"/>'
+    + '<ellipse cx="92" cy="106" rx="62" ry="50" fill="#ffb04f"/>'
+    + '<path d="M72 62 Q62 106 72 150" stroke="#fff" stroke-width="9" fill="none" opacity=".85"/>'
+    + '<path d="M106 66 Q99 106 106 146" stroke="#fff" stroke-width="9" fill="none" opacity=".85"/>'
+    + '<circle cx="62" cy="96" r="18" fill="#fff"/><circle cx="60" cy="98" r="9" fill="#0a2a44"/>'
+    + '<circle cx="57" cy="94" r="3" fill="#fff"/>'
+    + '<circle cx="52" cy="118" r="7" fill="#ff7a3c" opacity=".6"/>'
+    + '<ellipse class="mouth" cx="44" cy="112" rx="8" ry="6" fill="#0a2a44"/>',
+
+  monster:
+    '<ellipse cx="100" cy="86" rx="58" ry="52" fill="#b483ff"/>'
+    + '<path class="tent" d="M58 122 Q40 166 56 182 Q68 168 72 132 Z" fill="#9a5cf0"/>'
+    + '<path class="tent" d="M82 134 Q74 176 88 186 Q94 168 94 136 Z" fill="#b483ff" style="animation-delay:.15s"/>'
+    + '<path class="tent" d="M108 136 Q116 178 102 186 Q98 170 96 136 Z" fill="#9a5cf0" style="animation-delay:.3s"/>'
+    + '<path class="tent" d="M132 132 Q152 172 138 184 Q128 168 120 132 Z" fill="#b483ff" style="animation-delay:.45s"/>'
+    + '<path class="tent" d="M144 122 Q164 160 150 174 Q140 154 130 126 Z" fill="#9a5cf0" style="animation-delay:.6s"/>'
+    + '<circle cx="82" cy="78" r="18" fill="#fff"/><circle cx="120" cy="78" r="18" fill="#fff"/>'
+    + '<circle cx="84" cy="80" r="8" fill="#0a2a44"/><circle cx="122" cy="80" r="8" fill="#0a2a44"/>'
+    + '<circle cx="81" cy="76" r="3" fill="#fff"/><circle cx="119" cy="76" r="3" fill="#fff"/>'
+    + '<circle cx="66" cy="98" r="7" fill="#ff8fa8" opacity=".7"/><circle cx="134" cy="98" r="7" fill="#ff8fa8" opacity=".7"/>'
+    + '<ellipse class="mouth" cx="101" cy="106" rx="11" ry="7" fill="#0a2a44"/>',
+
+  whale:
+    '<path class="wagL" d="M150 110 Q186 86 190 66 Q193 104 190 130 Q172 122 150 116 Z" fill="#4f86d8"/>'
+    + '<line x1="70" y1="52" x2="62" y2="30" stroke="#bdeeff" stroke-width="6" stroke-linecap="round" opacity=".8"/>'
+    + '<line x1="80" y1="50" x2="84" y2="28" stroke="#bdeeff" stroke-width="6" stroke-linecap="round" opacity=".8"/>'
+    + '<ellipse cx="92" cy="108" rx="70" ry="54" fill="#6ea8ff"/>'
+    + '<ellipse cx="92" cy="128" rx="52" ry="30" fill="#eaf7ff" opacity=".85"/>'
+    + '<circle cx="70" cy="98" r="16" fill="#fff"/><circle cx="110" cy="98" r="16" fill="#fff"/>'
+    + '<circle cx="72" cy="100" r="8" fill="#0a2a44"/><circle cx="112" cy="100" r="8" fill="#0a2a44"/>'
+    + '<circle cx="69" cy="96" r="3" fill="#fff"/><circle cx="109" cy="96" r="3" fill="#fff"/>'
+    + '<circle cx="54" cy="120" r="7" fill="#ff8fa8" opacity=".7"/><circle cx="120" cy="120" r="7" fill="#ff8fa8" opacity=".7"/>'
+    + '<path class="mouth" d="M64 128 Q92 146 120 128 Q92 138 64 128 Z" fill="#0a2a44"/>',
+
+  turtle:
+    '<ellipse cx="96" cy="116" rx="64" ry="50" fill="#4faa78"/>'
+    + '<path d="M96 70 Q150 78 152 116 Q150 156 96 162 Q42 156 40 116 Q42 78 96 70 Z" fill="#7bd8a6"/>'
+    + '<path d="M96 80 L120 100 L110 130 L82 130 L72 100 Z" fill="#4faa78" opacity=".55"/>'
+    + '<path class="wagL" d="M150 118 Q172 110 178 124 Q170 134 150 130 Z" fill="#4faa78"/>'
+    + '<rect x="56" y="158" width="16" height="20" rx="7" fill="#4faa78"/>'
+    + '<rect x="120" y="158" width="16" height="20" rx="7" fill="#4faa78"/>'
+    + '<g class="neck">'
+    + '<ellipse cx="96" cy="58" rx="26" ry="22" fill="#7bd8a6"/>'
+    + '<circle cx="86" cy="54" r="10" fill="#fff"/><circle cx="106" cy="54" r="10" fill="#fff"/>'
+    + '<circle cx="87" cy="55" r="5" fill="#0a2a44"/><circle cx="107" cy="55" r="5" fill="#0a2a44"/>'
+    + '<circle cx="84" cy="52" r="2" fill="#fff"/><circle cx="104" cy="52" r="2" fill="#fff"/>'
+    + '<circle cx="76" cy="64" r="5" fill="#ff8fa8" opacity=".7"/><circle cx="116" cy="64" r="5" fill="#ff8fa8" opacity=".7"/>'
+    + '<ellipse class="mouth" cx="96" cy="68" rx="9" ry="4" fill="#0a2a44"/>'
+    + '</g>',
+
+  crab:
+    '<path class="wig" d="M44 96 Q14 80 18 56 Q30 78 52 84 Z" fill="#ff7a5c"/>'
+    + '<path class="wig" d="M148 96 Q178 80 174 56 Q162 78 140 84 Z" fill="#ff7a5c"/>'
+    + '<ellipse cx="96" cy="110" rx="66" ry="46" fill="#ff8f7a"/>'
+    + '<ellipse cx="96" cy="122" rx="44" ry="24" fill="#ffd0c4" opacity=".7"/>'
+    + '<rect x="40" y="150" width="12" height="20" rx="6" fill="#ff7a5c"/>'
+    + '<rect x="70" y="156" width="12" height="20" rx="6" fill="#ff7a5c"/>'
+    + '<rect x="110" y="156" width="12" height="20" rx="6" fill="#ff7a5c"/>'
+    + '<rect x="140" y="150" width="12" height="20" rx="6" fill="#ff7a5c"/>'
+    + '<line x1="80" y1="74" x2="76" y2="54" stroke="#ff7a5c" stroke-width="5" stroke-linecap="round"/>'
+    + '<line x1="112" y1="74" x2="116" y2="54" stroke="#ff7a5c" stroke-width="5" stroke-linecap="round"/>'
+    + '<circle cx="76" cy="50" r="8" fill="#fff"/><circle cx="116" cy="50" r="8" fill="#fff"/>'
+    + '<circle cx="77" cy="51" r="4" fill="#0a2a44"/><circle cx="117" cy="51" r="4" fill="#0a2a44"/>'
+    + '<circle cx="66" cy="106" r="7" fill="#ff5e7a" opacity=".6"/><circle cx="126" cy="106" r="7" fill="#ff5e7a" opacity=".6"/>'
+    + '<path class="mouth" d="M80 116 Q96 130 112 116 Q96 124 80 116 Z" fill="#0a2a44"/>',
+
+  seahorse:
+    '<path class="wagL" d="M150 118 Q182 108 186 128 Q176 140 150 132 Z" fill="#e0b24c"/>'
+    + '<ellipse cx="94" cy="116" rx="66" ry="52" fill="#ffcf5c"/>'
+    + '<ellipse cx="94" cy="130" rx="46" ry="28" fill="#fff0c8" opacity=".8"/>'
+    + '<path d="M150 150 Q172 168 150 178 Q140 166 138 152 Z" fill="#e0b24c"/>'
+    + '<ellipse cx="70" cy="64" rx="34" ry="28" fill="#ffcf5c"/>'
+    + '<path class="wig" d="M60 40 Q70 22 84 40 Z" fill="#e0b24c"/>'
+    + '<circle cx="60" cy="60" r="13" fill="#fff"/><circle cx="90" cy="60" r="13" fill="#fff"/>'
+    + '<circle cx="62" cy="62" r="6" fill="#0a2a44"/><circle cx="92" cy="62" r="6" fill="#0a2a44"/>'
+    + '<circle cx="59" cy="58" r="2" fill="#fff"/><circle cx="89" cy="58" r="2" fill="#fff"/>'
+    + '<circle cx="50" cy="74" r="6" fill="#ff8fa8" opacity=".7"/><circle cx="100" cy="74" r="6" fill="#ff8fa8" opacity=".7"/>'
+    + '<ellipse class="mouth" cx="75" cy="80" rx="10" ry="6" fill="#0a2a44"/>',
+
+  dog:
+    '<path class="wagL" d="M150 122 Q178 108 184 124 Q176 138 150 132 Z" fill="#c8965a"/>'
+    + '<ellipse cx="100" cy="122" rx="60" ry="48" fill="#e7bd86"/>'
+    + '<rect x="78" y="158" width="16" height="20" rx="7" fill="#c8965a"/>'
+    + '<rect x="106" y="158" width="16" height="20" rx="7" fill="#c8965a"/>'
+    + '<path class="wig" d="M62 58 Q42 70 50 112 Q68 104 72 76 Z" fill="#c8965a"/>'
+    + '<path class="wig" d="M138 58 Q158 70 150 112 Q132 104 128 76 Z" fill="#c8965a" style="animation-delay:.2s"/>'
+    + '<ellipse cx="100" cy="88" rx="46" ry="42" fill="#e7bd86"/>'
+    + '<ellipse cx="100" cy="104" rx="24" ry="18" fill="#f6ddb8"/>'
+    + '<ellipse cx="100" cy="96" rx="8" ry="6" fill="#0a2a44"/>'
+    + '<circle cx="82" cy="76" r="15" fill="#fff"/><circle cx="118" cy="76" r="15" fill="#fff"/>'
+    + '<circle cx="84" cy="78" r="7" fill="#0a2a44"/><circle cx="120" cy="78" r="7" fill="#0a2a44"/>'
+    + '<circle cx="81" cy="74" r="2.5" fill="#fff"/><circle cx="117" cy="74" r="2.5" fill="#fff"/>'
+    + '<circle cx="66" cy="98" r="7" fill="#ff8fa8" opacity=".6"/><circle cx="134" cy="98" r="7" fill="#ff8fa8" opacity=".6"/>'
+    + '<path class="mouth" d="M86 110 Q100 122 114 110 Q100 118 86 110 Z" fill="#0a2a44"/>',
+
+  cat:
+    '<path class="wagL" d="M150 130 Q182 120 184 150 Q174 158 150 142 Z" fill="#d98f3e"/>'
+    + '<ellipse cx="100" cy="124" rx="56" ry="46" fill="#f0a85a"/>'
+    + '<path d="M62 56 L54 28 L86 50 Z" fill="#f0a85a"/><path d="M138 56 L146 28 L114 50 Z" fill="#f0a85a"/>'
+    + '<path d="M66 52 L62 38 L78 50 Z" fill="#ffd0b0"/><path d="M134 52 L138 38 L122 50 Z" fill="#ffd0b0"/>'
+    + '<ellipse cx="100" cy="84" rx="44" ry="40" fill="#f0a85a"/>'
+    + '<circle cx="82" cy="78" r="14" fill="#fff"/><circle cx="118" cy="78" r="14" fill="#fff"/>'
+    + '<ellipse cx="83" cy="80" rx="5" ry="9" fill="#0a2a44"/><ellipse cx="119" cy="80" rx="5" ry="9" fill="#0a2a44"/>'
+    + '<circle cx="80" cy="76" r="2" fill="#fff"/><circle cx="116" cy="76" r="2" fill="#fff"/>'
+    + '<path d="M96 96 L100 100 L104 96 Z" fill="#ff8fa8"/>'
+    + '<circle cx="68" cy="94" r="6" fill="#ff8fa8" opacity=".55"/><circle cx="132" cy="94" r="6" fill="#ff8fa8" opacity=".55"/>'
+    + '<line x1="58" y1="92" x2="34" y2="86" stroke="#fff" stroke-width="2.5" opacity=".8"/>'
+    + '<line x1="58" y1="98" x2="34" y2="102" stroke="#fff" stroke-width="2.5" opacity=".8"/>'
+    + '<line x1="142" y1="92" x2="166" y2="86" stroke="#fff" stroke-width="2.5" opacity=".8"/>'
+    + '<line x1="142" y1="98" x2="166" y2="102" stroke="#fff" stroke-width="2.5" opacity=".8"/>'
+    + '<ellipse class="mouth" cx="100" cy="106" rx="8" ry="5" fill="#0a2a44"/>',
+
+  rabbit:
+    '<ellipse class="wig" cx="80" cy="44" rx="11" ry="34" fill="#f3f0ef"/>'
+    + '<ellipse class="wig" cx="120" cy="44" rx="11" ry="34" fill="#f3f0ef" style="animation-delay:.2s"/>'
+    + '<ellipse cx="80" cy="46" rx="5" ry="24" fill="#ffc2d1"/><ellipse cx="120" cy="46" rx="5" ry="24" fill="#ffc2d1"/>'
+    + '<ellipse cx="100" cy="128" rx="54" ry="48" fill="#f3f0ef"/>'
+    + '<ellipse cx="100" cy="92" rx="42" ry="38" fill="#f3f0ef"/>'
+    + '<circle cx="84" cy="86" r="13" fill="#fff"/><circle cx="116" cy="86" r="13" fill="#fff"/>'
+    + '<circle cx="85" cy="88" r="7" fill="#0a2a44"/><circle cx="117" cy="88" r="7" fill="#0a2a44"/>'
+    + '<circle cx="82" cy="84" r="2.5" fill="#fff"/><circle cx="114" cy="84" r="2.5" fill="#fff"/>'
+    + '<path d="M96 100 L100 104 L104 100 Z" fill="#ff8fa8"/>'
+    + '<circle cx="70" cy="102" r="7" fill="#ffb3c6" opacity=".7"/><circle cx="130" cy="102" r="7" fill="#ffb3c6" opacity=".7"/>'
+    + '<ellipse class="mouth" cx="100" cy="112" rx="7" ry="4" fill="#0a2a44"/>'
+    + '<rect x="96" y="113" width="3.5" height="6" rx="1" fill="#fff"/><rect x="100.5" y="113" width="3.5" height="6" rx="1" fill="#fff"/>',
+
+  bird:
+    '<path class="wagL" d="M58 116 Q30 110 24 132 Q44 138 64 128 Z" fill="#e8b800"/>'
+    + '<ellipse cx="100" cy="112" rx="50" ry="46" fill="#ffd24d"/>'
+    + '<path class="wig" d="M138 96 Q170 96 172 120 Q150 122 134 112 Z" fill="#f3c01f"/>'
+    + '<path d="M96 28 Q100 14 104 28 Z" fill="#f3c01f"/>'
+    + '<circle cx="100" cy="78" r="34" fill="#ffd24d"/>'
+    + '<circle cx="88" cy="74" r="13" fill="#fff"/><circle cx="112" cy="74" r="13" fill="#fff"/>'
+    + '<circle cx="89" cy="76" r="6.5" fill="#0a2a44"/><circle cx="113" cy="76" r="6.5" fill="#0a2a44"/>'
+    + '<circle cx="86" cy="72" r="2.5" fill="#fff"/><circle cx="110" cy="72" r="2.5" fill="#fff"/>'
+    + '<path class="mouth" d="M92 88 L100 100 L108 88 Z" fill="#ff8c2e"/>'
+    + '<circle cx="74" cy="90" r="6" fill="#ff8fa8" opacity=".55"/><circle cx="126" cy="90" r="6" fill="#ff8fa8" opacity=".55"/>'
+    + '<line x1="92" y1="156" x2="92" y2="172" stroke="#ff8c2e" stroke-width="4" stroke-linecap="round"/>'
+    + '<line x1="108" y1="156" x2="108" y2="172" stroke="#ff8c2e" stroke-width="4" stroke-linecap="round"/>',
+
+  hamster:
+    '<ellipse cx="100" cy="116" rx="62" ry="54" fill="#f0c987"/>'
+    + '<ellipse cx="100" cy="130" rx="42" ry="34" fill="#fbe8c8" opacity=".85"/>'
+    + '<circle class="wig" cx="60" cy="68" r="15" fill="#f0c987"/>'
+    + '<circle class="wig" cx="140" cy="68" r="15" fill="#f0c987" style="animation-delay:.2s"/>'
+    + '<circle cx="60" cy="68" r="8" fill="#f3b9a0"/><circle cx="140" cy="68" r="8" fill="#f3b9a0"/>'
+    + '<circle cx="84" cy="92" r="14" fill="#fff"/><circle cx="116" cy="92" r="14" fill="#fff"/>'
+    + '<circle cx="85" cy="94" r="7" fill="#0a2a44"/><circle cx="117" cy="94" r="7" fill="#0a2a44"/>'
+    + '<circle cx="82" cy="90" r="2.5" fill="#fff"/><circle cx="114" cy="90" r="2.5" fill="#fff"/>'
+    + '<ellipse cx="100" cy="108" rx="6" ry="4" fill="#0a2a44"/>'
+    + '<circle cx="66" cy="108" r="8" fill="#ffb3c6" opacity=".7"/><circle cx="134" cy="108" r="8" fill="#ffb3c6" opacity=".7"/>'
+    + '<ellipse class="mouth" cx="100" cy="120" rx="7" ry="4" fill="#0a2a44"/>'
+    + '<rect x="96" y="121" width="3.5" height="6" rx="1" fill="#fff"/><rect x="100.5" y="121" width="3.5" height="6" rx="1" fill="#fff"/>',
+
+  snake:
+    '<path d="M96 106 C152 92 174 138 138 164 C112 184 92 156 116 142" stroke="#5aa856" stroke-width="22" fill="none" stroke-linecap="round"/>'
+    + '<path d="M120 146 l16 -3 l-9 14 Z" fill="#5aa856"/>'
+    + '<ellipse cx="86" cy="92" rx="40" ry="34" fill="#6fc36a"/>'
+    + '<ellipse cx="86" cy="104" rx="26" ry="14" fill="#bfe8b0" opacity=".7"/>'
+    + '<circle cx="74" cy="84" r="13" fill="#fff"/><circle cx="100" cy="84" r="13" fill="#fff"/>'
+    + '<circle cx="75" cy="86" r="6.5" fill="#0a2a44"/><circle cx="101" cy="86" r="6.5" fill="#0a2a44"/>'
+    + '<circle cx="72" cy="82" r="2.5" fill="#fff"/><circle cx="98" cy="82" r="2.5" fill="#fff"/>'
+    + '<circle cx="60" cy="98" r="6" fill="#ff8fa8" opacity=".55"/><circle cx="112" cy="98" r="6" fill="#ff8fa8" opacity=".55"/>'
+    + '<ellipse class="mouth" cx="86" cy="108" rx="9" ry="5" fill="#0a2a44"/>'
+    + '<path class="wig" d="M86 113 q-3 10 -7 13 q3 -1 7 -8 q4 7 7 8 q-4 -3 -7 -13 Z" fill="#ff5e7a"/>',
+
+  jellyfish:
+    '<path class="tent" d="M64 120 Q56 164 68 182 Q78 166 78 124 Z" fill="#ffaad4"/>'
+    + '<path class="tent" d="M84 126 Q78 168 90 184 Q96 168 96 128 Z" fill="#ff8fc6" style="animation-delay:.15s"/>'
+    + '<path class="tent" d="M104 128 Q98 170 110 184 Q116 168 116 128 Z" fill="#ffaad4" style="animation-delay:.3s"/>'
+    + '<path class="tent" d="M124 124 Q132 166 120 182 Q114 166 112 124 Z" fill="#ff8fc6" style="animation-delay:.45s"/>'
+    + '<path class="tent" d="M138 120 Q146 160 134 176 Q126 160 126 122 Z" fill="#ffaad4" style="animation-delay:.6s"/>'
+    + '<path d="M40 110 Q40 56 100 56 Q160 56 160 110 Q160 122 148 122 L52 122 Q40 122 40 110 Z" fill="#ffc2e0" opacity=".92"/>'
+    + '<circle cx="84" cy="98" r="13" fill="#fff"/><circle cx="116" cy="98" r="13" fill="#fff"/>'
+    + '<circle cx="85" cy="100" r="6.5" fill="#0a2a44"/><circle cx="117" cy="100" r="6.5" fill="#0a2a44"/>'
+    + '<circle cx="82" cy="96" r="2.5" fill="#fff"/><circle cx="114" cy="96" r="2.5" fill="#fff"/>'
+    + '<circle cx="70" cy="110" r="6" fill="#ff6fa8" opacity=".5"/><circle cx="130" cy="110" r="6" fill="#ff6fa8" opacity=".5"/>'
+    + '<ellipse class="mouth" cx="100" cy="112" rx="9" ry="5" fill="#0a2a44"/>',
+
+  bee:
+    '<ellipse class="wig" cx="66" cy="70" rx="22" ry="13" fill="#cdeaff" opacity=".85" transform="rotate(-18 66 70)"/>'
+    + '<ellipse class="wig" cx="134" cy="70" rx="22" ry="13" fill="#cdeaff" opacity=".85" transform="rotate(18 134 70)" style="animation-delay:.1s"/>'
+    + '<ellipse cx="100" cy="116" rx="52" ry="46" fill="#ffd23f"/>'
+    + '<path d="M70 92 Q100 86 130 92 L128 104 Q100 110 72 104 Z" fill="#2b2b2b"/>'
+    + '<path d="M66 118 Q100 114 134 118 L132 132 Q100 138 68 132 Z" fill="#2b2b2b"/>'
+    + '<path d="M78 148 Q100 156 122 148 L116 158 Q100 164 84 158 Z" fill="#2b2b2b"/>'
+    + '<circle cx="86" cy="80" r="13" fill="#fff"/><circle cx="114" cy="80" r="13" fill="#fff"/>'
+    + '<circle cx="87" cy="82" r="6.5" fill="#0a2a44"/><circle cx="115" cy="82" r="6.5" fill="#0a2a44"/>'
+    + '<circle cx="84" cy="78" r="2.5" fill="#fff"/><circle cx="112" cy="78" r="2.5" fill="#fff"/>'
+    + '<line x1="90" y1="64" x2="84" y2="46" stroke="#2b2b2b" stroke-width="3" stroke-linecap="round"/><circle cx="83" cy="44" r="4" fill="#2b2b2b"/>'
+    + '<line x1="110" y1="64" x2="116" y2="46" stroke="#2b2b2b" stroke-width="3" stroke-linecap="round"/><circle cx="117" cy="44" r="4" fill="#2b2b2b"/>'
+    + '<circle cx="72" cy="96" r="6" fill="#ff8fa8" opacity=".55"/><circle cx="128" cy="96" r="6" fill="#ff8fa8" opacity=".55"/>'
+    + '<ellipse class="mouth" cx="100" cy="96" rx="8" ry="5" fill="#0a2a44"/>',
+
+  crocodile:
+    '<path class="wagL" d="M158 132 Q192 120 202 94 Q204 130 194 152 Q174 148 158 140 Z" fill="#4f9a52"/>'
+    + '<ellipse cx="116" cy="132" rx="58" ry="27" fill="#62b566"/>'
+    + '<rect x="92" y="153" width="15" height="18" rx="6" fill="#4f9a52"/>'
+    + '<rect x="128" y="153" width="15" height="18" rx="6" fill="#4f9a52"/>'
+    + '<path d="M108 106 l8 -12 8 12 Z" fill="#3f8a42"/><path d="M132 110 l7 -11 7 11 Z" fill="#3f8a42"/><path d="M154 118 l6 -9 6 9 Z" fill="#3f8a42"/>'
+    + '<path d="M16 116 Q9 105 24 103 L112 111 Q126 118 112 127 L26 129 Q11 127 16 116 Z" fill="#62b566"/>'
+    + '<ellipse cx="60" cy="115" rx="40" ry="5" fill="#bfe4a8" opacity=".4"/>'
+    + '<path class="mouth" d="M20 117 L110 117 L110 123 L20 123 Z" fill="#0a2a44"/>'
+    + '<path d="M30 117 l4 7 4 -7 Z" fill="#fff"/><path d="M46 117 l4 7 4 -7 Z" fill="#fff"/><path d="M62 117 l4 7 4 -7 Z" fill="#fff"/><path d="M78 117 l4 7 4 -7 Z" fill="#fff"/><path d="M94 117 l4 7 4 -7 Z" fill="#fff"/>'
+    + '<path d="M38 123 l4 -7 4 7 Z" fill="#fff"/><path d="M54 123 l4 -7 4 7 Z" fill="#fff"/><path d="M70 123 l4 -7 4 7 Z" fill="#fff"/><path d="M86 123 l4 -7 4 7 Z" fill="#fff"/>'
+    + '<circle cx="20" cy="110" r="2" fill="#0a2a44"/><circle cx="27" cy="110" r="2" fill="#0a2a44"/>'
+    + '<circle cx="92" cy="98" r="15" fill="#62b566"/><circle cx="112" cy="98" r="15" fill="#5aa850"/>'
+    + '<circle cx="92" cy="96" r="10" fill="#fff"/><circle cx="112" cy="96" r="10" fill="#fff"/>'
+    + '<circle cx="93" cy="97" r="5" fill="#0a2a44"/><circle cx="113" cy="97" r="5" fill="#0a2a44"/>'
+    + '<circle cx="90" cy="94" r="2" fill="#fff"/><circle cx="110" cy="94" r="2" fill="#fff"/>',
+
+  lion:
+    '<path class="wagL" d="M150 142 Q182 136 186 160 Q174 164 150 152 Z" fill="#e08a2e"/>'
+    + '<ellipse cx="100" cy="130" rx="54" ry="44" fill="#f0b850"/>'
+    + '<circle cx="148" cy="84" r="14" fill="#e8983a"/><circle cx="134" cy="118" r="14" fill="#e8983a"/>'
+    + '<circle cx="100" cy="132" r="14" fill="#e8983a"/><circle cx="66" cy="118" r="14" fill="#e8983a"/>'
+    + '<circle cx="52" cy="84" r="14" fill="#e8983a"/><circle cx="66" cy="50" r="14" fill="#e8983a"/>'
+    + '<circle cx="100" cy="36" r="14" fill="#e8983a"/><circle cx="134" cy="50" r="14" fill="#e8983a"/>'
+    + '<circle class="wig" cx="74" cy="54" r="11" fill="#f0b850"/><circle class="wig" cx="126" cy="54" r="11" fill="#f0b850" style="animation-delay:.2s"/>'
+    + '<circle cx="100" cy="86" r="40" fill="#f5c873"/>'
+    + '<ellipse cx="100" cy="100" rx="22" ry="15" fill="#f8d89a"/>'
+    + '<circle cx="86" cy="80" r="13" fill="#fff"/><circle cx="114" cy="80" r="13" fill="#fff"/>'
+    + '<circle cx="87" cy="82" r="6.5" fill="#0a2a44"/><circle cx="115" cy="82" r="6.5" fill="#0a2a44"/>'
+    + '<circle cx="84" cy="78" r="2.5" fill="#fff"/><circle cx="112" cy="78" r="2.5" fill="#fff"/>'
+    + '<path d="M93 94 Q100 90 107 94 Q100 102 93 94 Z" fill="#7a4a32"/>'
+    + '<circle cx="70" cy="98" r="6" fill="#ff8fa8" opacity=".55"/><circle cx="130" cy="98" r="6" fill="#ff8fa8" opacity=".55"/>'
+    + '<path class="mouth" d="M88 106 Q100 116 112 106 Q100 112 88 106 Z" fill="#0a2a44"/>',
+
+  elephant:
+    '<ellipse cx="104" cy="126" rx="58" ry="48" fill="#9fb0c0"/>'
+    + '<rect x="84" y="162" width="18" height="18" rx="7" fill="#8a9cad"/>'
+    + '<rect x="116" y="162" width="18" height="18" rx="7" fill="#8a9cad"/>'
+    + '<ellipse class="wig" cx="58" cy="98" rx="30" ry="34" fill="#8a9cad"/>'
+    + '<ellipse class="wig" cx="150" cy="98" rx="30" ry="34" fill="#8a9cad" style="animation-delay:.2s"/>'
+    + '<ellipse cx="104" cy="94" rx="46" ry="42" fill="#9fb0c0"/>'
+    + '<circle cx="90" cy="84" r="12" fill="#fff"/><circle cx="118" cy="84" r="12" fill="#fff"/>'
+    + '<circle cx="91" cy="86" r="6" fill="#0a2a44"/><circle cx="119" cy="86" r="6" fill="#0a2a44"/>'
+    + '<circle cx="88" cy="82" r="2.2" fill="#fff"/><circle cx="116" cy="82" r="2.2" fill="#fff"/>'
+    + '<circle cx="74" cy="100" r="6" fill="#ff8fa8" opacity=".5"/><circle cx="134" cy="100" r="6" fill="#ff8fa8" opacity=".5"/>'
+    + '<ellipse class="mouth" cx="104" cy="110" rx="8" ry="4" fill="#0a2a44"/>'
+    + '<path d="M104 116 Q92 152 78 168 Q90 154 96 124" stroke="#9fb0c0" stroke-width="20" fill="none" stroke-linecap="round"/>'
+    + '<path d="M96 130 l-4 16 6 -4 Z" fill="#fff"/><path d="M112 130 l4 16 -6 -4 Z" fill="#fff"/>',
+
+  monkey:
+    '<path d="M150 132 q34 4 32 -28 q-4 28 -28 34 Z" fill="#8a5d31"/>'
+    + '<ellipse cx="100" cy="126" rx="52" ry="44" fill="#a9743f"/>'
+    + '<circle class="wig" cx="60" cy="76" r="18" fill="#a9743f"/>'
+    + '<circle class="wig" cx="140" cy="76" r="18" fill="#a9743f" style="animation-delay:.2s"/>'
+    + '<circle cx="60" cy="76" r="10" fill="#c79a6a"/><circle cx="140" cy="76" r="10" fill="#c79a6a"/>'
+    + '<circle cx="100" cy="86" r="42" fill="#a9743f"/>'
+    + '<ellipse cx="100" cy="100" rx="34" ry="31" fill="#e9c9a0"/>'
+    + '<circle cx="86" cy="84" r="12" fill="#fff"/><circle cx="114" cy="84" r="12" fill="#fff"/>'
+    + '<circle cx="87" cy="86" r="6" fill="#0a2a44"/><circle cx="115" cy="86" r="6" fill="#0a2a44"/>'
+    + '<circle cx="84" cy="82" r="2.2" fill="#fff"/><circle cx="112" cy="82" r="2.2" fill="#fff"/>'
+    + '<circle cx="94" cy="102" r="1.8" fill="#0a2a44"/><circle cx="106" cy="102" r="1.8" fill="#0a2a44"/>'
+    + '<circle cx="72" cy="102" r="6" fill="#ff8fa8" opacity=".5"/><circle cx="128" cy="102" r="6" fill="#ff8fa8" opacity=".5"/>'
+    + '<path class="mouth" d="M86 110 Q100 120 114 110 Q100 116 86 110 Z" fill="#0a2a44"/>'
+};
+
+/* ============ Emoji animal library (the long tail – say almost any animal) ============ */
+var EMOJI = {
+  penguin:['🐧','เพนกวิน',['penguin','เพนกวิน']], tiger:['🐯','เสือ',['tiger','tigers','เสือ']],
+  bear:['🐻','หมี',['bear','bears','หมี','teddy']], panda:['🐼','แพนด้า',['panda','แพนด้า']],
+  giraffe:['🦒','ยีราฟ',['giraffe','ยีราฟ']], zebra:['🦓','ม้าลาย',['zebra','ม้าลาย']],
+  cow:['🐮','วัว',['cow','cows','วัว','moo','มอ']], pig:['🐷','หมู',['pig','pigs','หมู','oink','อู๊ด']],
+  horse:['🐴','ม้า',['horse','horses','ม้า','pony','neigh']], sheep:['🐑','แกะ',['sheep','แกะ','baa']],
+  goat:['🐐','แพะ',['goat','แพะ']], duck:['🦆','เป็ด',['duck','ducks','เป็ด','quack','ก้าบ']],
+  chicken:['🐔','ไก่',['chicken','ไก่','hen','cluck']], chick:['🐤','ลูกเจี๊ยบ',['chick','ลูกเจี๊ยบ','เจี๊ยบ']],
+  owl:['🦉','นกฮูก',['owl','owls','นกฮูก','hoot']], frog:['🐸','กบ',['frog','frogs','กบ','ribbit','อ๊บ']],
+  deer:['🦌','กวาง',['deer','กวาง']], fox:['🦊','จิ้งจอก',['fox','จิ้งจอก','หมาจิ้งจอก']],
+  wolf:['🐺','หมาป่า',['wolf','wolves','หมาป่า','howl']], koala:['🐨','โคอาลา',['koala','โคอาลา']],
+  kangaroo:['🦘','จิงโจ้',['kangaroo','จิงโจ้']], hippo:['🦛','ฮิปโป',['hippo','ฮิปโป','hippopotamus']],
+  rhino:['🦏','แรด',['rhino','แรด','rhinoceros']], camel:['🐫','อูฐ',['camel','อูฐ']],
+  gorilla:['🦍','กอริลลา',['gorilla','กอริลลา']], sloth:['🦥','สลอธ',['sloth','สลอธ']],
+  raccoon:['🦝','แรคคูน',['raccoon','แรคคูน']], squirrel:['🐿️','กระรอก',['squirrel','กระรอก']],
+  hedgehog:['🦔','เม่น',['hedgehog','เม่น']], bat:['🦇','ค้างคาว',['bat','bats','ค้างคาว']],
+  butterfly:['🦋','ผีเสื้อ',['butterfly','butterflies','ผีเสื้อ']], ladybug:['🐞','เต่าทอง',['ladybug','เต่าทอง']],
+  spider:['🕷️','แมงมุม',['spider','spiders','แมงมุม']], ant:['🐜','มด',['ant','ants','มด']],
+  snail:['🐌','หอยทาก',['snail','snails','หอยทาก','ทาก']], starfish:['⭐','ปลาดาว',['starfish','ปลาดาว','ดาวทะเล']],
+  dolphin:['🐬','โลมา',['dolphin','dolphins','โลมา']], unicorn:['🦄','ยูนิคอร์น',['unicorn','ยูนิคอร์น','ม้ามีเขา']],
+  dragon:['🐉','มังกร',['dragon','dragons','มังกร']], parrot:['🦜','นกแก้ว',['parrot','นกแก้ว']],
+  peacock:['🦚','นกยูง',['peacock','นกยูง']], flamingo:['🦩','ฟลามิงโก',['flamingo','ฟลามิงโก']],
+  swan:['🦢','หงส์',['swan','swans','หงส์']], lizard:['🦎','กิ้งก่า',['lizard','กิ้งก่า','จิ้งจก']],
+  shrimp:['🦐','กุ้ง',['shrimp','กุ้ง']]
+};
+
+/* ============ kid words for the 20 hand-drawn animals ============ */
+var ART_SYN = {
+  shark:['shark','sharky','baby shark','ฉลาม','ปลาฉลาม'], whale:['whale','วาฬ','ปลาวาฬ'],
+  fish:['fish','fishy','little fish','nemo','ปลา','ปลาน้อย'], monster:['octopus','squid','ปลาหมึก','หมึก','หนวด','สัตว์ประหลาด','มอนสเตอร์'],
+  turtle:['turtle','tortoise','เต่า','เต่าน้อย'], crab:['crab','crabby','ปู','ก้ามปู'],
+  seahorse:['seahorse','seal','sea lion','ม้าน้ำ','แมวน้ำ','สิงโตทะเล'], lion:['lion','king','roar','สิงโต','เจ้าป่า','คำราม'],
+  elephant:['elephant','ellie','trunk','ช้าง','ช้างน้อย','งวง','แปร๋น'], monkey:['monkey','ape','banana','ลิง','ลิงน้อย','เจี๊ยก'],
+  dino:['dinosaur','dino','t rex','trex','rawr','ไดโนเสาร์','ไดโน'], dog:['dog','doggy','puppy','pup','woof','หมา','น้องหมา','สุนัข','โฮ่ง','บ๊อก'],
+  cat:['cat','kitty','kitten','meow','แมว','เหมียว','น้องแมว','แมวเหมียว'], rabbit:['rabbit','bunny','hop','กระต่าย','กระต่ายน้อย'],
+  bird:['bird','birdy','birdie','tweet','นก','นกน้อย','จิ๊บ'], hamster:['hamster','hammy','แฮมสเตอร์','หนูน้อย'],
+  snake:['snake','snakey','ssss','งู','งูน้อย','เลื้อย'], jellyfish:['jellyfish','jelly fish','jelly','แมงกะพรุน','กะพรุน','วุ้น'],
+  bee:['bee','bees','bumblebee','buzz','bzzz','ผึ้ง','ผึ้งน้อย','หึ่ง'], crocodile:['crocodile','croc','alligator','gator','จระเข้','ไอ้เข้']
+};
+
+/* ============ reply words (3 buttons + lots of kid words) ============ */
+var REPLY = {
+  more:['more','again','one more','keep going','tell me more','yes','yeah','yep','ok','okay','sure','อีก','อีกๆ','เล่าอีก','เอาอีก','ขออีก','ใช่','เอา','โอเค','ตกลง'],
+  why:['why','how come','how','what','ทำไม','เพราะอะไร','ยังไง','อะไร'],
+  wow:['wow','woah','whoa','cool','amazing','haha','funny','ว้าว','เจ๋ง','สุดยอด','เท่','ตลก','ขำ'],
+  next:['next','another','different','change','ต่อไป','ถัดไป','อันอื่น','อื่น','เปลี่ยน','ตัวอื่น'],
+  no:['no','nope','nah','ไม่','ไม่เอา','ไม่ชอบ']
+};
+
+/* ============ i18n ============ */
+var T = {
+  th:{ langName:'Thai', tapHint:'แตะไมค์ แล้วบอกชื่อสัตว์ เช่น "ฉลาม"', listening:'กำลังฟัง… พูดได้เลย!',
+    idle:'แตะ 🎤 แล้วบอกชื่อสัตว์ที่อยากเห็นได้เลย!', why:'ทำไม?', wow:'ว้าว!', next:'ตัวต่อไป',
+    greet:function(n){return n? 'สวัสดีจ้ะ '+n+'! ไปเล่นกันเลย!':'สวัสดีจ้ะ! ไปเล่นกันเลย!';},
+    dontknow:'อุ๊ย ยังไม่เคยเจอเลย! ลองพูด "สิงโต" หรือ "ช้าง" ดูไหม?',
+    oops:'อุ๊ย Jarvis งงนิดหน่อย ลองอีกทีนะ!', nomic:'เครื่องนี้ยังพูดไม่ได้ ลองใช้ Chrome นะ',
+    nmTitle:'ใครจะเล่นบ้าง?', nmSub:'ใส่ชื่อลูกได้หลายคน แล้วติ๊กคนที่เล่นวันนี้', nmPlace:'พิมพ์ชื่อ...', nmBtn:'เริ่มเล่น!', nmAdd:'+ เพิ่ม',
+    wows:['เย่! สนุกจัง!','ฮ่าๆ เจ๋งใช่ไหมล่ะ!','ว้าวว สุดยอด!','ไชโย! เก่งมาก!'] },
+  en:{ langName:'English', tapHint:'Tap the mic and say an animal, like "shark"', listening:'Listening… go ahead!',
+    idle:'Tap 🎤 and say any animal you want to see!', why:'Why?', wow:'Wow!', next:'Next',
+    greet:function(n){return n? 'Hi '+n+'! Let\u2019s explore!':'Hi! Let\u2019s explore together!';},
+    dontknow:'Ooh, I haven\u2019t met that one! Try saying "lion" or "elephant"!',
+    oops:'Oops! Jarvis got a little confused. Try again!', nomic:'This device can\u2019t listen yet. Try Chrome!',
+    nmTitle:'Who\u2019s playing?', nmSub:'Add each child, tick who\u2019s here today', nmPlace:'Type a name...', nmBtn:'Let\u2019s play!', nmAdd:'+ Add',
+    wows:['Yay! So much fun!','Haha! Cool, right?','Wow wow wow!','Hooray! Great job!'] }
+};
+
+/* ============ state ============ */
+var lang='th', kids=[], nameTurn=0, greeted=false, busy=false, reqId=0, convo=[];
+var CALL_TH=[' ดูสิ! ',' นี่จ้ะ! ',' ว้าว! ',' '];
+var CALL_EN=[', look! ',', check it out! ',', wow! ',', '];
+var current=null;   // {key, kind:'art'|'emoji', topic, danger}
+var ART_KEYS = Object.keys(ANIMALS);
+function $(id){return document.getElementById(id);}
+function pick(a){return a[Math.floor(Math.random()*a.length)];}
+
+/* ============ build the word matcher (longest word first; art wins ties) ============ */
+var WORDS = (function(){
+  var list=[];
+  for(var k in ANIMALS){ var w=[k]; if(ANIMALS[k].th) w.push(ANIMALS[k].th); if(ART_SYN[k]) w=w.concat(ART_SYN[k]);
+    for(var i=0;i<w.length;i++) list.push([(''+w[i]).toLowerCase(),k,'art',1]); }
+  for(var e in EMOJI){ var arr=EMOJI[e][2].concat([e]);
+    for(var j=0;j<arr.length;j++) list.push([(''+arr[j]).toLowerCase(),e,'emoji',0]); }
+  list.sort(function(a,b){ if(b[0].length!==a[0].length) return b[0].length-a[0].length; return b[3]-a[3]; });
+  return list;
+})();
+function matchAnimal(t){ t=' '+t.toLowerCase().replace(/[.,!?]/g,'')+' ';
+  for(var i=0;i<WORDS.length;i++){ if(t.indexOf(WORDS[i][0])!==-1) return {key:WORDS[i][1],kind:WORDS[i][2]}; } return null; }
+function matchReply(t){ var raw=t.toLowerCase().replace(/[.,!?]/g,''); var p=' '+raw+' ';
+  for(var k in REPLY){ for(var i=0;i<REPLY[k].length;i++){ var w=(''+REPLY[k][i]).toLowerCase();
+    if(/^[\x00-\x7F ]+$/.test(w)){ if(p.indexOf(' '+w+' ')!==-1) return k; } else { if(raw.indexOf(w)!==-1) return k; } } } return null; }
+
+/* ============ speech (lively voice) + anti-feedback-loop ============ */
+var jarvisSpeaking=false, muteUntil=0, speakWatchdog=null, curUtter=null;
+function setTalking(on){ var c=$('creature'); if(c) c.classList.toggle('talking',!!on); }
+function speak(text){
+  try{
+    if(!('speechSynthesis' in window)){ busy=false; return; }
+    window.speechSynthesis.cancel();
+    var u=new SpeechSynthesisUtterance(text);
+    u.lang=(lang==='th')?'th-TH':'en-US';
+    u.rate=(lang==='th'?1.0:1.05)+(Math.random()*0.08-0.04);
+    u.pitch=1.32+(Math.random()*0.22-0.11);
+    var vs=window.speechSynthesis.getVoices()||[];
+    var want=vs.filter(function(v){return v.lang&&v.lang.toLowerCase().indexOf(lang==='th'?'th':'en')===0;});
+    if(want.length){ var nice=want.find(function(v){return /kanya|google|samantha|nicky|aaron/i.test(v.name);}); u.voice=nice||want[0]; }
+    jarvisSpeaking=true; setTalking(true);
+    if(speakWatchdog) clearTimeout(speakWatchdog);
+    var est=Math.min(12000,2200+text.length*85);
+    speakWatchdog=setTimeout(function(){ jarvisSpeaking=false; muteUntil=Date.now()+300; setTalking(false); busy=false; },est);
+    u.onstart=function(){ jarvisSpeaking=true; setTalking(true); };
+    u.onend=function(){ if(speakWatchdog)clearTimeout(speakWatchdog); jarvisSpeaking=false; muteUntil=Date.now()+1000; setTalking(false); busy=false; };
+    u.onerror=function(){ if(speakWatchdog)clearTimeout(speakWatchdog); jarvisSpeaking=false; muteUntil=Date.now()+1000; setTalking(false); busy=false; };
+    curUtter=u; window.speechSynthesis.speak(u);
+  }catch(e){ jarvisSpeaking=false; setTalking(false); busy=false; }
+}
+
+/* ============ speech bubble ============ */
+function showSay(txt){ $('speech').classList.remove('idle'); $('say').textContent=txt; }
+function showIdle(){ $('speech').classList.add('idle'); $('say').textContent=T[lang].idle; }
+function setThinking(){ $('speech').classList.remove('idle'); $('say').innerHTML='<span class="dots"><span></span><span></span><span></span></span>'; }
+
+/* ============ render the creature ============ */
+function renderVisual(kind,key,emoji){
+  var c=$('creature'); c.classList.remove('show'); 
+  if(kind==='art'){ c.innerHTML='<svg class="art" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">'+AVATARS[key]+'</svg>'; }
+  else{ c.innerHTML='<span class="bigemoji">'+emoji+'</span>'; }
+  void c.offsetWidth; c.classList.add('show');
+  $('jarvis').classList.add('buddy');
+}
+
+/* ============ summon an animal ============ */
+function summon(key,kind){
+  busy=true; reqId++;
+  var name, topic, danger=false, emoji='';
+  if(kind==='art'){ var a=ANIMALS[key]; name=(lang==='th')?a.th:a.en; topic=a.topic; danger=!!a.danger; }
+  else{ emoji=EMOJI[key][0]; name=(lang==='th')?EMOJI[key][1]:key; topic=name; }
+  current={key:key,kind:kind,topic:topic,danger:danger,name:name,emoji:emoji};
+  renderVisual(kind,key,emoji);
+  setThinking();
+  var safety = danger ? " At the very end add a tiny 3-word safety tag like 'Only look, okay!' — nothing more, never scary." : "";
+  var prompt = "Tell one fun thing about "+topic+", in "+T[lang].langName+", for a 3 year old. ONE tiny sentence, max 10 words."+safety;
+  convo=[]; callJarvis(prompt, danger);
+}
+
+/* ============ Jarvis brain (Netlify function) with offline fallback ============ */
+function callJarvis(userText,danger){
+  var myId=++reqId; setThinking();
+  convo.push({role:'user',content:userText});
+  if(convo.length>10) convo=convo.slice(-10);
+  fetch("/.netlify/functions/jarvis",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({messages:convo,lang:lang})})
+  .then(function(r){return r.text().then(function(raw){var d=null;try{d=JSON.parse(raw);}catch(e){}return {ok:r.ok,status:r.status,d:d,raw:raw};});})
+  .then(function(res){
+    if(myId!==reqId) return;
+    var text=(res.d&&res.d.text)?String(res.d.text).trim():'';
+    if(res.ok&&text){ convo.push({role:'assistant',content:text}); var s=maybeName(text); showSay(s); speak(s); return; }
+    offline(); 
+    showDiag('Server: '+((res.d&&res.d.error)||('status '+res.status)));
+  })
+  .catch(function(){ if(myId!==reqId) return; offline(); });
+}
+function offline(){
+  busy=false;
+  var line='';
+  if(current){
+    if(current.kind==='art'){ line=(lang==='th')?ANIMALS[current.key].fillTh:ANIMALS[current.key].fillEn; }
+    else { line=current.emoji+' '+current.name+'!'; }
+  }
+  if(!line) line=T[lang].oops;
+  var s=maybeName(line); showSay(s); speak(s);
+}
+
+/* ============ buttons ============ */
+function onWhy(){ if(busy||!current) return; busy=true;
+  callJarvis("Why? Answer in "+T[lang].langName+", one tiny sentence, max 10 words.", current.danger); }
+function onWow(){ var w=maybeName(pick(T[lang].wows),true); showSay(w); speak(w); confetti(); }
+function onNext(){ if(busy) return; var k=pick(ART_KEYS); summon(k,'art'); }
+function moreFact(){ if(busy||!current) return; busy=true;
+  callJarvis("Tell another tiny fun fact about "+current.topic+", in "+T[lang].langName+", max 10 words.", current.danger); }
+
+/* ============ route what the child says ============ */
+function routeSpeech(said){
+  var a=matchAnimal(said); if(a){ summon(a.key,a.kind); return; }
+  var r=matchReply(said);
+  if(r==='next'){ onNext(); return; }
+  if(r==='why'){ onWhy(); return; }
+  if(r==='wow'){ onWow(); return; }
+  if(r==='more'){ moreFact(); return; }
+  if(r==='no'){ var ok=(lang==='th')?'ได้จ้ะ!':'Okay!'; showSay(ok); speak(ok); return; }
+  if(current){ moreFact(); return; }            // talking about something -> keep going
+  // nothing matched and nothing on stage
+  showSay(T[lang].dontknow); speak(T[lang].dontknow);
+}
+function handleHeard(said){
+  if(!said) return;
+  if(jarvisSpeaking || Date.now()<muteUntil) return;
+  if(!greeted){ greeted=true; }
+  routeSpeech(said);
+}
+
+/* ============ microphone ============ */
+var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+var USE_TAPTALK=(function(){var ua=navigator.userAgent||'';return /iPad|iPhone|iPod/.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);})();
+var recog=null, micOn=false;
+function startRecog(oneShot){
+  if(!SR){ flashHint(T[lang].nomic); return; }
+  try{ if(recog){ recog.onend=null; recog.abort(); } }catch(e){}
+  recog=new SR();
+  recog.lang=(lang==='th')?'th-TH':'en-US';
+  recog.continuous=!oneShot; recog.interimResults=false;
+  recog.onresult=function(ev){
+    var said=''; for(var i=ev.resultIndex;i<ev.results.length;i++){ if(ev.results[i].isFinal) said+=ev.results[i][0].transcript; }
+    said=said.trim(); if(!said) return;
+    showDiag('Heard: "'+said+'"'); handleHeard(said);
+  };
+  recog.onerror=function(e){ showDiag('Mic: '+e.error); if(e.error==='not-allowed'||e.error==='service-not-allowed'){ micOn=false; setMic(); } };
+  recog.onend=function(){ if(oneShot){ micOn=false; setMic(); return; } if(micOn){ setTimeout(function(){ try{recog.start();}catch(e){} },300); } };
+  try{ recog.start(); }catch(e){}
+}
+function setMic(){ $('mic').classList.toggle('on',micOn); $('hint').textContent = micOn?T[lang].listening:T[lang].tapHint; }
+function micClick(){
+  if(!greeted){ greeted=true; var g=greetLine(); showSay(g); speak(g); }
+  if(USE_TAPTALK){ micOn=true; setMic(); startRecog(true); return; }
+  micOn=!micOn; setMic(); if(micOn) startRecog(false); else { try{ if(recog){recog.onend=null;recog.abort();} }catch(e){} }
+}
+function flashHint(t){ $('hint').textContent=t; }
+
+/* ============ children profiles + name calling ============ */
+function loadKids(){ try{
+  var raw=localStorage.getItem('jarvisKids'); if(raw){ var a=JSON.parse(raw); if(a&&a.length) return a; }
+  var old=localStorage.getItem('jarvisKidName'); if(old){ return [{name:old,here:true}]; }
+}catch(e){} return []; }
+function saveKids(){ try{ localStorage.setItem('jarvisKids',JSON.stringify(kids)); }catch(e){} }
+function hereKids(){ var h=kids.filter(function(k){return k.here;}); return h.length?h:kids; }
+function renderKidList(){
+  var box=$('kidList'); if(!box) return; box.innerHTML='';
+  kids.forEach(function(k,idx){
+    var row=document.createElement('div'); row.className='kid'+(k.here?' here':' away');
+    row.innerHTML='<button class="tick" onclick="toggleHere('+idx+')">'+(k.here?'✓':'')+'</button>'
+      +'<span class="nm"></span><button class="del" onclick="delKid('+idx+')">✕</button>';
+    row.querySelector('.nm').textContent=k.name;
+    box.appendChild(row);
+  });
+}
+function addKid(){ var v=($('nmInput').value||'').trim(); if(!v) return; kids.push({name:v,here:true}); $('nmInput').value=''; saveKids(); renderKidList(); }
+function delKid(i){ kids.splice(i,1); saveKids(); renderKidList(); }
+function toggleHere(i){ kids[i].here=!kids[i].here; saveKids(); renderKidList(); }
+function openKids(){ renderKidList(); $('nameModal').classList.add('show'); }
+function doneKids(){ var v=($('nmInput').value||'').trim(); if(v){ kids.push({name:v,here:true}); $('nmInput').value=''; saveKids(); } $('nameModal').classList.remove('show'); }
+
+function nextName(){ var h=hereKids(); if(!h.length) return ''; var n=h[nameTurn%h.length].name; nameTurn++; return n; }
+function maybeName(text,force){
+  var h=hereKids(); if(!h.length) return text;
+  if(!force && Math.random()>0.4) return text;       // call a name ~40% of the time
+  var n=nextName(); if(!n) return text;
+  return n + (lang==='th'?pick(CALL_TH):pick(CALL_EN)) + text;
+}
+function greetLine(){
+  var names=hereKids().map(function(k){return k.name;});
+  if(lang==='th'){ if(!names.length) return 'สวัสดีจ้ะ! ไปเล่นกันเลย!';
+    var who=names.length===1?names[0]:names.slice(0,-1).join(', ')+' กับ '+names[names.length-1];
+    return 'สวัสดีจ้ะ '+who+'! ไปเล่นกันเลย!'; }
+  if(!names.length) return 'Hi! Let\u2019s explore together!';
+  var w=names.length===1?names[0]:names.slice(0,-1).join(', ')+' and '+names[names.length-1];
+  return 'Hi '+w+'! Let\u2019s explore!';
+}
+function setLang(l){
+  lang=l; document.documentElement.lang=l;
+  $('thBtn').classList.toggle('on',l==='th'); $('enBtn').classList.toggle('on',l==='en');
+  $('lWhy').textContent=T[l].why; $('lWow').textContent=T[l].wow; $('lNext').textContent=T[l].next;
+  $('nmTitle').textContent=T[l].nmTitle; $('nmSub').textContent=T[l].nmSub; $('nmInput').placeholder=T[l].nmPlace; $('nmBtn').textContent=T[l].nmBtn; $('nmAdd').textContent=T[l].nmAdd;
+  if(recog){ recog.lang=(l==='th')?'th-TH':'en-US'; }
+  if(!current) showIdle();
+  flashHint(micOn?T[l].listening:T[l].tapHint);
+}
+
+/* ============ confetti ============ */
+function confetti(){ var cols=['#ffd24a','#ff9ec4','#5fd0a8','#9ec7ff','#ff8f7a'], host=$('app');
+  for(var k=0;k<18;k++){ (function(i){ var d=document.createElement('div'); d.className='confetti';
+    d.style.left=(20+Math.random()*60)+'%'; d.style.background=cols[i%cols.length]; host.appendChild(d);
+    var dx=(Math.random()*180-90),dy=(240+Math.random()*180),rot=(Math.random()*540-270);
+    d.animate([{transform:'rotate(0)',opacity:1},{transform:'translate('+dx+'px,'+dy+'px) rotate('+rot+'deg)',opacity:0}],
+      {duration:1100+Math.random()*500,easing:'cubic-bezier(.2,.6,.3,1)'}).onfinish=function(){d.remove();}; })(k); } }
+
+/* ============ diagnostics ============ */
+function showDiag(msg){ var d=$('diag'); d.textContent='🔧 '+msg+'  (tap to close)'; d.classList.add('show'); }
+
+/* ============ bubbles ============ */
+(function(){ var host=$('app'); for(var b=0;b<16;b++){ var s=6+Math.random()*16, el=document.createElement('div'); el.className='bubble';
+  el.style.width=s+'px'; el.style.height=s+'px'; el.style.left=(Math.random()*100)+'%';
+  el.style.animationDuration=(7+Math.random()*8)+'s'; el.style.animationDelay=(-Math.random()*10)+'s'; host.appendChild(el); } })();
+
+/* ============ init ============ */
+$('mic').addEventListener('click',micClick);
+kids=loadKids();
+setLang('th');
+showIdle();
+renderKidList();
+if(!kids.length){ $('nameModal').classList.add('show'); }
+if('speechSynthesis' in window){ window.speechSynthesis.onvoiceschanged=function(){}; }
+</script>
+</body>
+</html>
