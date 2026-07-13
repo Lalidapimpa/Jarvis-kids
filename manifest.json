@@ -1,0 +1,18 @@
+{
+  "name": "Jarvis Jr.",
+  "short_name": "Jarvis Jr.",
+  "description": "เพื่อน AI คุยด้วยเสียง สองภาษา สำหรับเด็กเล็ก",
+  "lang": "th",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#04122e",
+  "theme_color": "#0d2d6e",
+  "categories": ["education", "kids"],
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
