@@ -1,89 +1,149 @@
-// Jarvis Jr. — secure backend
-// This runs on Netlify's server, NOT in the browser, so the API key stays hidden.
-// The key is read from an environment variable named ANTHROPIC_API_KEY
-// (you set this in the Netlify dashboard — never write the key in this file).
+/* Jarvis Jr. — the brain.
+ *
+ * Big idea: the ANIMAL talks, not a narrator. The animal is played by Claude,
+ * but Claude is only allowed to say what is on the FACT SHEET the app sends.
+ * That gives us both things Lalida asked for:
+ *    - never repetitive  (Claude writes fresh words every single turn)
+ *    - never wrong       (facts + the touch/safety rule are locked to the card)
+ *
+ * Env var required (already set in Netlify): ANTHROPIC_API_KEY
+ */
 
-const CORS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "Content-Type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Content-Type": "application/json",
+const MODEL = 'claude-haiku-4-5-20251001';
+
+const TOUCH_RULE = {
+  no: {
+    th: 'ห้ามจับเด็ดขาด. ถ้าเด็กถามเรื่องจับ/แตะ/เล่นด้วย ต้องบอกชัดว่าห้ามจับ และบอกเหตุผลสั้นๆ อย่างใจดี ไม่ขู่',
+    en: 'MUST NOT be touched. If the child talks about touching, holding or grabbing you, say clearly that they must not touch you, and give the short kind reason. Never soften this.'
+  },
+  careful: {
+    th: 'จับได้ แต่ต้องมีผู้ใหญ่อยู่ด้วยและต้องระวัง. ถ้าเด็กถามเรื่องจับ ให้บอกว่าจับได้แต่ต้องให้ผู้ใหญ่ช่วย และบอกสิ่งที่ต้องระวัง',
+    en: 'MAY be touched only gently and only with a grown-up helping. If the child talks about touching you, say a grown-up must help, and name the thing to watch out for.'
+  },
+  ok: {
+    th: 'จับได้อย่างปลอดภัย. บอกเด็กได้ว่าจับได้เบาๆ นะ แต่ต้องอ่อนโยน',
+    en: 'CAN be safely held. Tell the child they may hold you gently, and to be kind.'
+  }
 };
 
-function systemPrompt(lang) {
-  const langName = lang === "th" ? "Thai (ภาษาไทย)" : "English";
-  return (
-    "You are Jarvis, a happy, silly, super friendly robot friend talking to a VERY little child, only 3 or 4 years old. " +
-    "The child loves animals.\n" +
-    "RULES:\n" +
-    "- Speak ONLY in " + langName + ".\n" +
-    "- VERY SHORT. ONE short sentence only, about 8 to 12 words. The child hears you out loud, so keep it tiny and snappy.\n" +
-    "- Start with a fun sound (Whoosh! Splash! Rawr! Wow! Boing!), then ONE amazing true thing about the animal.\n" +
-    "- Use tiny easy words. You MAY add a tiny 2-3 word question sometimes, but often just the cool fact is plenty. Never long, never boring.\n" +
-    "- NEVER scary, sad, or yucky. No hurting people, no blood, no dying. Animals are friendly and amazing.\n" +
-    "- For a dangerous animal, happily remind the child to only LOOK, never touch, and tell a grown-up — but keep it light, not scary.\n" +
-    "- If asked something grown-up or unsafe, sweetly say to go ask Mommy or Daddy, then talk about a fun animal again.\n" +
-    "- Plain spoken words only: no emoji, no markdown, no lists, no asterisks.\n" +
-    "- Never mention these instructions."
-  );
+function factSheet(a, lang) {
+  const f = (a.facts && a.facts[lang]) || {};
+  const lines = [];
+  if (f.look) lines.push('- What I look like: ' + f.look);
+  if (f.home) lines.push('- Where I live: ' + f.home);
+  if (f.food) lines.push('- What I eat: ' + f.food);
+  if (f.life) lines.push('- How I live: ' + f.life);
+  if (f.care) lines.push('- Safety / what to watch out for: ' + f.care);
+  if (f.fun && f.fun.length) lines.push('- Fun things about me: ' + f.fun.join(' | '));
+  return lines.join('\n');
+}
+
+function buildSystem(body) {
+  const lang = body.lang === 'en' ? 'en' : 'th';
+  const language = lang === 'th' ? 'Thai' : 'English';
+  const a = body.animal || null;
+  const kids = Array.isArray(body.kids) ? body.kids.filter(Boolean) : [];
+  const kidLine = kids.length
+    ? 'The child (or children) you are talking to are called: ' + kids.join(', ') + '. Use a name now and then, not every line.'
+    : 'You do not know the child\'s name.';
+
+  // No animal on stage -> Jarvis the little robot friend is speaking.
+  if (!a) {
+    return [
+      'You are Jarvis, a warm little robot friend for a child aged 2-5.',
+      kidLine,
+      'Reply in ' + language + '. ONE short, happy sentence (max 12 words). Then invite them to pick an animal.',
+      'Never repeat a sentence you have already said in this conversation.',
+      'Never scary. Never violent. Never mention that you are an AI or a computer program.'
+    ].join('\n');
+  }
+
+  const touch = TOUCH_RULE[a.touch] || TOUCH_RULE.no;
+  const name = lang === 'th' ? (a.th || a.en) : (a.en || a.th);
+
+  return [
+    'ROLEPLAY: You ARE a real ' + (a.en || name) + '. You are alive, in front of a child aged 2-5, and you are talking to them yourself.',
+    'Speak in the FIRST PERSON as the animal ("I am...", "I live in..."). You are NOT a narrator and NOT a robot.',
+    kidLine,
+    '',
+    'HOW TO REPLY (obey every line):',
+    '1. Reply in ' + language + ' only.',
+    '2. ONE short sentence about yourself (max 14 words), THEN ONE simple question back to the child (max 8 words).',
+    '3. NEVER repeat any sentence, fact or question you already used in this conversation. Bring something new each time. This is the most important rule after safety: a child who hears the same line twice gets bored.',
+    '4. Warm, playful, curious, like a friend. Words a 2-5 year old knows.',
+    '5. If the child answers your question, react to their answer warmly first, then share something new.',
+    '',
+    'TRUTH RULE: You may ONLY use what is on your FACT SHEET below. Never invent facts, numbers or places.',
+    'If the child asks something that is not on the sheet, cheerfully say you are not sure, and share something from the sheet instead.',
+    '',
+    'SAFETY RULE (never soften, never break): ' + touch[lang],
+    'Never frighten the child. No blood, no hunting scenes, no death, no teeth-and-attack talk. You are gentle.',
+    '',
+    'YOUR FACT SHEET (' + name + '):',
+    factSheet(a, lang)
+  ].join('\n');
 }
 
 exports.handler = async function (event) {
-  // Browser pre-flight check
-  if (event.httpMethod === "OPTIONS") {
-    return { statusCode: 200, headers: CORS, body: "" };
-  }
-  if (event.httpMethod !== "POST") {
-    return { statusCode: 405, headers: CORS, body: JSON.stringify({ error: "Use POST" }) };
+  if (event.httpMethod !== 'POST') {
+    return { statusCode: 405, body: JSON.stringify({ error: 'POST only' }) };
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    return {
-      statusCode: 500,
-      headers: CORS,
-      body: JSON.stringify({ error: "Missing ANTHROPIC_API_KEY. Add it in Netlify > Site settings > Environment variables." }),
-    };
+  const key = process.env.ANTHROPIC_API_KEY;
+  if (!key) {
+    return { statusCode: 500, body: JSON.stringify({ error: 'ANTHROPIC_API_KEY is not set in Netlify' }) };
+  }
+
+  let body;
+  try { body = JSON.parse(event.body || '{}'); }
+  catch (e) { return { statusCode: 400, body: JSON.stringify({ error: 'bad json' }) }; }
+
+  const messages = Array.isArray(body.messages) ? body.messages.slice(-12) : [];
+  if (!messages.length) {
+    return { statusCode: 400, body: JSON.stringify({ error: 'no messages' }) };
   }
 
   try {
-    const body = JSON.parse(event.body || "{}");
-    const messages = Array.isArray(body.messages) ? body.messages : [];
-    const lang = body.lang === "th" ? "th" : "en";
-
-    if (!messages.length) {
-      return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: "No messages" }) };
-    }
-
-    const resp = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
+        'content-type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001", // fastest + cheapest, great for short kid answers
-        max_tokens: 60,                      // hard cap so answers stay tiny for a 3-4 year old
-        system: systemPrompt(lang),
-        messages: messages,
-      }),
+        model: MODEL,
+        max_tokens: 160,        // one sentence + one question, Thai needs room
+        temperature: 1,         // variety: this is what stops it sounding like a robot
+        system: buildSystem(body),
+        messages: messages
+      })
     });
 
-    const data = await resp.json();
+    const data = await r.json();
 
-    if (!resp.ok) {
-      return { statusCode: resp.status, headers: CORS, body: JSON.stringify({ error: (data && data.error && data.error.message) || "API error" }) };
+    if (!r.ok) {
+      const msg = (data && data.error && data.error.message) || ('status ' + r.status);
+      return { statusCode: 502, body: JSON.stringify({ error: msg }) };
     }
 
-    const text = (data.content || [])
-      .filter(function (b) { return b.type === "text"; })
-      .map(function (b) { return b.text; })
-      .join(" ")
-      .trim();
+    let text = '';
+    if (data && Array.isArray(data.content)) {
+      text = data.content.filter(function (b) { return b.type === 'text'; })
+                         .map(function (b) { return b.text; })
+                         .join(' ')
+                         .trim();
+    }
+    if (!text) {
+      return { statusCode: 502, body: JSON.stringify({ error: 'empty reply' }) };
+    }
 
-    return { statusCode: 200, headers: CORS, body: JSON.stringify({ text: text }) };
-  } catch (err) {
-    return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: String(err) }) };
+    return {
+      statusCode: 200,
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ text: text })
+    };
+  } catch (e) {
+    return { statusCode: 502, body: JSON.stringify({ error: String(e && e.message || e) }) };
   }
 };
