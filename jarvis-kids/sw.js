@@ -3,7 +3,7 @@
    Rule: NEVER cache the Jarvis brain (/.netlify/functions/) -- a stale answer is worse than none.
    Bump CACHE when index.html changes, or tablets will keep showing the old app. */
 
-var CACHE = 'jarvis-v1';
+var CACHE = 'jarvis-v2';
 
 var SHELL = [
   './',
@@ -47,9 +47,13 @@ self.addEventListener('fetch', function (e) {
   //    built-in offline facts take over.
   if (url.pathname.indexOf('/.netlify/') === 0) return;
 
-  // 2. Fonts (Google) -> cache once, then serve from cache forever.
+  // 2. Fonts + the real animal photos and the Wikipedia lookup that finds them.
+  //    Cache once, then serve from cache forever -> photos work offline after the
+  //    first time a child has met that animal.
   if (url.hostname.indexOf('fonts.googleapis.com') !== -1 ||
-      url.hostname.indexOf('fonts.gstatic.com') !== -1) {
+      url.hostname.indexOf('fonts.gstatic.com') !== -1 ||
+      url.hostname.indexOf('upload.wikimedia.org') !== -1 ||
+      url.hostname.indexOf('wikipedia.org') !== -1) {
     e.respondWith(
       caches.match(req).then(function (hit) {
         return hit || fetch(req).then(function (res) {
