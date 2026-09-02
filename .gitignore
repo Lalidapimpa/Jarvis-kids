@@ -1,0 +1,17 @@
+# Dependencies and build output
+node_modules/
+dist/
+build/
+.next/
+.netlify/
+
+# Secrets and local environment files
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Local artifacts
+.DS_Store
+*.log
